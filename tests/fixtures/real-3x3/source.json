@@ -1,0 +1,38 @@
+{
+  "repository": "https://github.com/dwalton76/rubiks-cube-tracker",
+  "commit": "40f372982430ba8d7e4c9070bdb429e1ab0450ba",
+  "sourceDirectory": "test-data/3x3x3-random-01",
+  "files": [
+    {
+      "path": "3x3x3-random-01/rubiks-side-B.png",
+      "sha": "2255f0c02464f0b497df331bb9727829bcea8e91",
+      "size": 3291031
+    },
+    {
+      "path": "3x3x3-random-01/rubiks-side-D.png",
+      "sha": "9e30ee19f3032c10c068c07bb35dd8baf669097e",
+      "size": 3252432
+    },
+    {
+      "path": "3x3x3-random-01/rubiks-side-F.png",
+      "sha": "34f6ed63d30d4261106b605e0c7888900730fa4d",
+      "size": 3240577
+    },
+    {
+      "path": "3x3x3-random-01/rubiks-side-L.png",
+      "sha": "b1322d89d0ebedf6e8ccea7810fa9aab9c382980",
+      "size": 3247691
+    },
+    {
+      "path": "3x3x3-random-01/rubiks-side-R.png",
+      "sha": "6e4dd1dce257b633cea25a85a119efd77e51ae75",
+      "size": 3230316
+    },
+    {
+      "path": "3x3x3-random-01/rubiks-side-U.png",
+      "sha": "1a62ecb6173e9d1a4ea92675b837470c95e19bd9",
+      "size": 3269553
+    }
+  ],
+  "license": "MIT"
+}

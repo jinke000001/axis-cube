@@ -1,0 +1,1215 @@
+{
+  "source": "Wuji URDF, fixed vendored revision 829c9aa27cb12c3a49d5b8d63c9869dd8f656702",
+  "sides": {
+    "left": {
+      "sha256": "8dc5fd7dc0f3fb5420b36c63f69a63e45477ae68feb3ec6aace24aec3091a2de",
+      "joints": [
+        {
+          "name": "left_finger1_joint1",
+          "type": "revolute",
+          "parent": "left_palm_link",
+          "child": "left_finger1_link1",
+          "xyz": [
+            0.0084399,
+            -0.020587,
+            0.028893
+          ],
+          "rpy": [
+            1.328,
+            -0.37161,
+            0.7307
+          ],
+          "axis": [
+            0.0,
+            1.0,
+            0.0
+          ],
+          "lower": 0.0475,
+          "upper": 1.6033,
+          "velocity": 8.587
+        },
+        {
+          "name": "left_finger1_joint2",
+          "type": "revolute",
+          "parent": "left_finger1_link1",
+          "child": "left_finger1_link2",
+          "xyz": [
+            -0.0047549,
+            0.0058191,
+            0.014132
+          ],
+          "rpy": [
+            0.57428,
+            -0.23677,
+            -1.8034
+          ],
+          "axis": [
+            0.0,
+            -1.0,
+            0.0
+          ],
+          "lower": -0.1387,
+          "upper": 0.9324,
+          "velocity": 11.1
+        },
+        {
+          "name": "left_finger1_joint3",
+          "type": "revolute",
+          "parent": "left_finger1_link2",
+          "child": "left_finger1_link3",
+          "xyz": [
+            0.00026671,
+            0.0009915,
+            0.034666
+          ],
+          "rpy": [
+            -0.049049,
+            0.017311,
+            1.9085
+          ],
+          "axis": [
+            0.0,
+            1.0,
+            0.0
+          ],
+          "lower": -0.4642,
+          "upper": 1.5623,
+          "velocity": 12.863
+        },
+        {
+          "name": "left_finger1_joint4",
+          "type": "revolute",
+          "parent": "left_finger1_link3",
+          "child": "left_finger1_link4",
+          "xyz": [
+            0.0,
+            -0.0002,
+            0.0295
+          ],
+          "rpy": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "axis": [
+            0.0,
+            1.0,
+            0.0
+          ],
+          "lower": -0.4699,
+          "upper": 1.5568,
+          "velocity": 13.578
+        },
+        {
+          "name": "left_finger1_tip_fixed",
+          "type": "fixed",
+          "parent": "left_finger1_link4",
+          "child": "left_finger1_tip_link",
+          "xyz": [
+            -0.00105,
+            0.0002,
+            0.0313
+          ],
+          "rpy": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "axis": [
+            0.0,
+            0.0,
+            1.0
+          ],
+          "lower": 0,
+          "upper": 0,
+          "velocity": 0
+        },
+        {
+          "name": "left_finger2_joint1",
+          "type": "revolute",
+          "parent": "left_palm_link",
+          "child": "left_finger2_link1",
+          "xyz": [
+            -0.0058701,
+            -0.029434,
+            0.091917
+          ],
+          "rpy": [
+            0.11071,
+            -0.071139,
+            0.21822
+          ],
+          "axis": [
+            0.0,
+            1.0,
+            0.0
+          ],
+          "lower": -0.1585,
+          "upper": 1.5604,
+          "velocity": 8.203
+        },
+        {
+          "name": "left_finger2_joint2",
+          "type": "revolute",
+          "parent": "left_finger2_link1",
+          "child": "left_finger2_link2",
+          "xyz": [
+            0.0022,
+            0.0,
+            0.004000006
+          ],
+          "rpy": [
+            0.0,
+            0.0,
+            1.570796
+          ],
+          "axis": [
+            0.0,
+            1.0,
+            0.0
+          ],
+          "lower": -0.37,
+          "upper": 0.37,
+          "velocity": 8.115
+        },
+        {
+          "name": "left_finger2_joint3",
+          "type": "revolute",
+          "parent": "left_finger2_link2",
+          "child": "left_finger2_link3",
+          "xyz": [
+            0.0,
+            0.004749999,
+            0.04361769
+          ],
+          "rpy": [
+            0.0,
+            0.0,
+            -1.570528
+          ],
+          "axis": [
+            0.0,
+            1.0,
+            0.0
+          ],
+          "lower": -0.4777,
+          "upper": 1.5485,
+          "velocity": 12.863
+        },
+        {
+          "name": "left_finger2_joint4",
+          "type": "revolute",
+          "parent": "left_finger2_link3",
+          "child": "left_finger2_link4",
+          "xyz": [
+            0.0,
+            -0.0002,
+            0.0295
+          ],
+          "rpy": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "axis": [
+            0.0,
+            1.0,
+            0.0
+          ],
+          "lower": -0.4683,
+          "upper": 1.5753,
+          "velocity": 13.578
+        },
+        {
+          "name": "left_finger2_tip_fixed",
+          "type": "fixed",
+          "parent": "left_finger2_link4",
+          "child": "left_finger2_tip_link",
+          "xyz": [
+            -0.0010521,
+            0.0002108692,
+            0.0267
+          ],
+          "rpy": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "axis": [
+            0.0,
+            0.0,
+            1.0
+          ],
+          "lower": 0,
+          "upper": 0,
+          "velocity": 0
+        },
+        {
+          "name": "left_finger3_joint1",
+          "type": "revolute",
+          "parent": "left_palm_link",
+          "child": "left_finger3_link1",
+          "xyz": [
+            -0.01046,
+            -0.0074615,
+            0.089544
+          ],
+          "rpy": [
+            5.0894e-05,
+            -0.087266,
+            -0.00058387
+          ],
+          "axis": [
+            0.0,
+            1.0,
+            0.0
+          ],
+          "lower": -0.1644,
+          "upper": 1.5516,
+          "velocity": 8.203
+        },
+        {
+          "name": "left_finger3_joint2",
+          "type": "revolute",
+          "parent": "left_finger3_link1",
+          "child": "left_finger3_link2",
+          "xyz": [
+            0.0022,
+            0.0,
+            0.004000006
+          ],
+          "rpy": [
+            0.0,
+            0.0,
+            1.570796
+          ],
+          "axis": [
+            0.0,
+            1.0,
+            0.0
+          ],
+          "lower": -0.37,
+          "upper": 0.37,
+          "velocity": 8.115
+        },
+        {
+          "name": "left_finger3_joint3",
+          "type": "revolute",
+          "parent": "left_finger3_link2",
+          "child": "left_finger3_link3",
+          "xyz": [
+            0.0,
+            0.004749999,
+            0.04361769
+          ],
+          "rpy": [
+            0.0,
+            0.0,
+            -1.570528
+          ],
+          "axis": [
+            0.0,
+            1.0,
+            0.0
+          ],
+          "lower": -0.4739,
+          "upper": 1.5512,
+          "velocity": 12.863
+        },
+        {
+          "name": "left_finger3_joint4",
+          "type": "revolute",
+          "parent": "left_finger3_link3",
+          "child": "left_finger3_link4",
+          "xyz": [
+            0.0,
+            -0.0002,
+            0.0295
+          ],
+          "rpy": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "axis": [
+            0.0,
+            1.0,
+            0.0
+          ],
+          "lower": -0.4684,
+          "upper": 1.5745,
+          "velocity": 13.578
+        },
+        {
+          "name": "left_finger3_tip_fixed",
+          "type": "fixed",
+          "parent": "left_finger3_link4",
+          "child": "left_finger3_tip_link",
+          "xyz": [
+            -0.0010504,
+            0.0002026723,
+            0.0267
+          ],
+          "rpy": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "axis": [
+            0.0,
+            0.0,
+            1.0
+          ],
+          "lower": 0,
+          "upper": 0,
+          "velocity": 0
+        },
+        {
+          "name": "left_finger4_joint1",
+          "type": "revolute",
+          "parent": "left_palm_link",
+          "child": "left_finger4_link1",
+          "xyz": [
+            -0.0076649,
+            0.013712,
+            0.084429
+          ],
+          "rpy": [
+            -0.090375,
+            -0.083436,
+            -0.047127
+          ],
+          "axis": [
+            0.0,
+            1.0,
+            0.0
+          ],
+          "lower": -0.1554,
+          "upper": 1.5585,
+          "velocity": 8.203
+        },
+        {
+          "name": "left_finger4_joint2",
+          "type": "revolute",
+          "parent": "left_finger4_link1",
+          "child": "left_finger4_link2",
+          "xyz": [
+            0.0022,
+            0.0,
+            0.004000005
+          ],
+          "rpy": [
+            0.0,
+            0.0,
+            1.570796
+          ],
+          "axis": [
+            0.0,
+            1.0,
+            0.0
+          ],
+          "lower": -0.37,
+          "upper": 0.37,
+          "velocity": 8.115
+        },
+        {
+          "name": "left_finger4_joint3",
+          "type": "revolute",
+          "parent": "left_finger4_link2",
+          "child": "left_finger4_link3",
+          "xyz": [
+            0.0,
+            0.004749999,
+            0.04361769
+          ],
+          "rpy": [
+            0.0,
+            0.0,
+            -1.570528
+          ],
+          "axis": [
+            0.0,
+            1.0,
+            0.0
+          ],
+          "lower": -0.4765,
+          "upper": 1.5487,
+          "velocity": 12.863
+        },
+        {
+          "name": "left_finger4_joint4",
+          "type": "revolute",
+          "parent": "left_finger4_link3",
+          "child": "left_finger4_link4",
+          "xyz": [
+            0.0,
+            -0.0002,
+            0.0295
+          ],
+          "rpy": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "axis": [
+            0.0,
+            1.0,
+            0.0
+          ],
+          "lower": -0.4777,
+          "upper": 1.5634,
+          "velocity": 13.578
+        },
+        {
+          "name": "left_finger4_tip_fixed",
+          "type": "fixed",
+          "parent": "left_finger4_link4",
+          "child": "left_finger4_tip_link",
+          "xyz": [
+            -0.001049983,
+            0.0002025572,
+            0.0267
+          ],
+          "rpy": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "axis": [
+            0.0,
+            0.0,
+            1.0
+          ],
+          "lower": 0,
+          "upper": 0,
+          "velocity": 0
+        },
+        {
+          "name": "left_finger5_joint1",
+          "type": "revolute",
+          "parent": "left_palm_link",
+          "child": "left_finger5_link1",
+          "xyz": [
+            -0.002268651,
+            0.03400111,
+            0.07428134
+          ],
+          "rpy": [
+            -0.1924837,
+            -0.09251723,
+            -0.1576728
+          ],
+          "axis": [
+            0.0,
+            1.0,
+            0.0
+          ],
+          "lower": -0.1626,
+          "upper": 1.5585,
+          "velocity": 8.203
+        },
+        {
+          "name": "left_finger5_joint2",
+          "type": "revolute",
+          "parent": "left_finger5_link1",
+          "child": "left_finger5_link2",
+          "xyz": [
+            0.002200001,
+            0.0,
+            0.004000005
+          ],
+          "rpy": [
+            0.0,
+            0.0,
+            1.570796
+          ],
+          "axis": [
+            0.0,
+            1.0,
+            0.0
+          ],
+          "lower": -0.37,
+          "upper": 0.37,
+          "velocity": 8.115
+        },
+        {
+          "name": "left_finger5_joint3",
+          "type": "revolute",
+          "parent": "left_finger5_link2",
+          "child": "left_finger5_link3",
+          "xyz": [
+            0.0,
+            0.00475,
+            0.04361769
+          ],
+          "rpy": [
+            0.0,
+            0.0,
+            -1.570528
+          ],
+          "axis": [
+            0.0,
+            1.0,
+            0.0
+          ],
+          "lower": -0.4768,
+          "upper": 1.549,
+          "velocity": 12.863
+        },
+        {
+          "name": "left_finger5_joint4",
+          "type": "revolute",
+          "parent": "left_finger5_link3",
+          "child": "left_finger5_link4",
+          "xyz": [
+            0.0,
+            -0.0002,
+            0.0295
+          ],
+          "rpy": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "axis": [
+            0.0,
+            1.0,
+            0.0
+          ],
+          "lower": -0.4683,
+          "upper": 1.5735,
+          "velocity": 13.578
+        },
+        {
+          "name": "left_finger5_tip_fixed",
+          "type": "fixed",
+          "parent": "left_finger5_link4",
+          "child": "left_finger5_tip_link",
+          "xyz": [
+            -0.001050407,
+            0.0002010472,
+            0.0267
+          ],
+          "rpy": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "axis": [
+            0.0,
+            0.0,
+            1.0
+          ],
+          "lower": 0,
+          "upper": 0,
+          "velocity": 0
+        }
+      ]
+    },
+    "right": {
+      "sha256": "47aa811f1657ad236a1e22f009128d58a7e38045eca59fce0cca08c65a949b74",
+      "joints": [
+        {
+          "name": "right_finger1_joint1",
+          "type": "revolute",
+          "parent": "right_palm_link",
+          "child": "right_finger1_link1",
+          "xyz": [
+            0.0084399,
+            0.020587,
+            0.028893
+          ],
+          "rpy": [
+            -1.328,
+            -0.37161,
+            -0.7307
+          ],
+          "axis": [
+            0.0,
+            1.0,
+            0.0
+          ],
+          "lower": 0.0475,
+          "upper": 1.6033,
+          "velocity": 8.587
+        },
+        {
+          "name": "right_finger1_joint2",
+          "type": "revolute",
+          "parent": "right_finger1_link1",
+          "child": "right_finger1_link2",
+          "xyz": [
+            -0.0047549,
+            -0.0058191,
+            0.014132
+          ],
+          "rpy": [
+            0.57428,
+            0.23677,
+            -1.3382
+          ],
+          "axis": [
+            0.0,
+            1.0,
+            0.0
+          ],
+          "lower": -0.1387,
+          "upper": 0.9324,
+          "velocity": 11.1
+        },
+        {
+          "name": "right_finger1_joint3",
+          "type": "revolute",
+          "parent": "right_finger1_link2",
+          "child": "right_finger1_link3",
+          "xyz": [
+            -0.000266705,
+            0.0009915016,
+            0.03466562
+          ],
+          "rpy": [
+            0.04904945,
+            0.01731124,
+            1.233052
+          ],
+          "axis": [
+            0.0,
+            1.0,
+            0.0
+          ],
+          "lower": -0.4642,
+          "upper": 1.5623,
+          "velocity": 12.863
+        },
+        {
+          "name": "right_finger1_joint4",
+          "type": "revolute",
+          "parent": "right_finger1_link3",
+          "child": "right_finger1_link4",
+          "xyz": [
+            0.0,
+            0.0002,
+            0.0295
+          ],
+          "rpy": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "axis": [
+            0.0,
+            1.0,
+            0.0
+          ],
+          "lower": -0.4699,
+          "upper": 1.5568,
+          "velocity": 13.578
+        },
+        {
+          "name": "right_finger1_tip_fixed",
+          "type": "fixed",
+          "parent": "right_finger1_link4",
+          "child": "right_finger1_tip_link",
+          "xyz": [
+            -0.00105,
+            -0.0002,
+            0.0313
+          ],
+          "rpy": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "axis": [
+            0.0,
+            0.0,
+            1.0
+          ],
+          "lower": 0,
+          "upper": 0,
+          "velocity": 0
+        },
+        {
+          "name": "right_finger2_joint1",
+          "type": "revolute",
+          "parent": "right_palm_link",
+          "child": "right_finger2_link1",
+          "xyz": [
+            -0.0058701,
+            0.029434,
+            0.091917
+          ],
+          "rpy": [
+            -0.11071,
+            -0.071139,
+            -0.21822
+          ],
+          "axis": [
+            0.0,
+            1.0,
+            0.0
+          ],
+          "lower": -0.1585,
+          "upper": 1.5604,
+          "velocity": 8.203
+        },
+        {
+          "name": "right_finger2_joint2",
+          "type": "revolute",
+          "parent": "right_finger2_link1",
+          "child": "right_finger2_link2",
+          "xyz": [
+            0.0022,
+            0.0,
+            0.004000006
+          ],
+          "rpy": [
+            0.0,
+            0.0,
+            1.570796
+          ],
+          "axis": [
+            0.0,
+            1.0,
+            0.0
+          ],
+          "lower": -0.37,
+          "upper": 0.37,
+          "velocity": 8.115
+        },
+        {
+          "name": "right_finger2_joint3",
+          "type": "revolute",
+          "parent": "right_finger2_link2",
+          "child": "right_finger2_link3",
+          "xyz": [
+            0.0,
+            0.004750282,
+            0.04361766
+          ],
+          "rpy": [
+            0.0,
+            0.0,
+            -1.571065
+          ],
+          "axis": [
+            0.0,
+            1.0,
+            0.0
+          ],
+          "lower": -0.4777,
+          "upper": 1.5485,
+          "velocity": 12.863
+        },
+        {
+          "name": "right_finger2_joint4",
+          "type": "revolute",
+          "parent": "right_finger2_link3",
+          "child": "right_finger2_link4",
+          "xyz": [
+            0.0,
+            -0.0002,
+            0.0295
+          ],
+          "rpy": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "axis": [
+            0.0,
+            1.0,
+            0.0
+          ],
+          "lower": -0.4683,
+          "upper": 1.5753,
+          "velocity": 13.578
+        },
+        {
+          "name": "right_finger2_tip_fixed",
+          "type": "fixed",
+          "parent": "right_finger2_link4",
+          "child": "right_finger2_tip_link",
+          "xyz": [
+            -0.00105,
+            0.0002,
+            0.0267
+          ],
+          "rpy": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "axis": [
+            0.0,
+            0.0,
+            1.0
+          ],
+          "lower": 0,
+          "upper": 0,
+          "velocity": 0
+        },
+        {
+          "name": "right_finger3_joint1",
+          "type": "revolute",
+          "parent": "right_palm_link",
+          "child": "right_finger3_link1",
+          "xyz": [
+            -0.01046,
+            0.0074615,
+            0.089544
+          ],
+          "rpy": [
+            -5.0886e-05,
+            -0.087266,
+            0.00058387
+          ],
+          "axis": [
+            0.0,
+            1.0,
+            0.0
+          ],
+          "lower": -0.1644,
+          "upper": 1.5516,
+          "velocity": 8.203
+        },
+        {
+          "name": "right_finger3_joint2",
+          "type": "revolute",
+          "parent": "right_finger3_link1",
+          "child": "right_finger3_link2",
+          "xyz": [
+            0.0022,
+            0.0,
+            0.004000006
+          ],
+          "rpy": [
+            0.0,
+            0.0,
+            1.570796
+          ],
+          "axis": [
+            0.0,
+            1.0,
+            0.0
+          ],
+          "lower": -0.37,
+          "upper": 0.37,
+          "velocity": 8.115
+        },
+        {
+          "name": "right_finger3_joint3",
+          "type": "revolute",
+          "parent": "right_finger3_link2",
+          "child": "right_finger3_link3",
+          "xyz": [
+            0.0,
+            0.00475,
+            0.04361769
+          ],
+          "rpy": [
+            0.0,
+            0.0,
+            -1.571065
+          ],
+          "axis": [
+            0.0,
+            1.0,
+            0.0
+          ],
+          "lower": -0.4739,
+          "upper": 1.5512,
+          "velocity": 12.863
+        },
+        {
+          "name": "right_finger3_joint4",
+          "type": "revolute",
+          "parent": "right_finger3_link3",
+          "child": "right_finger3_link4",
+          "xyz": [
+            0.0,
+            -0.0002,
+            0.0295
+          ],
+          "rpy": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "axis": [
+            0.0,
+            1.0,
+            0.0
+          ],
+          "lower": -0.4684,
+          "upper": 1.5745,
+          "velocity": 13.578
+        },
+        {
+          "name": "right_finger3_tip_fixed",
+          "type": "fixed",
+          "parent": "right_finger3_link4",
+          "child": "right_finger3_tip_link",
+          "xyz": [
+            -0.001049087,
+            0.0002010395,
+            0.0267
+          ],
+          "rpy": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "axis": [
+            0.0,
+            0.0,
+            1.0
+          ],
+          "lower": 0,
+          "upper": 0,
+          "velocity": 0
+        },
+        {
+          "name": "right_finger4_joint1",
+          "type": "revolute",
+          "parent": "right_palm_link",
+          "child": "right_finger4_link1",
+          "xyz": [
+            -0.0076649,
+            -0.013712,
+            0.084429
+          ],
+          "rpy": [
+            0.090375,
+            -0.083436,
+            0.047127
+          ],
+          "axis": [
+            0.0,
+            1.0,
+            0.0
+          ],
+          "lower": -0.1554,
+          "upper": 1.5585,
+          "velocity": 8.203
+        },
+        {
+          "name": "right_finger4_joint2",
+          "type": "revolute",
+          "parent": "right_finger4_link1",
+          "child": "right_finger4_link2",
+          "xyz": [
+            0.002200001,
+            0.0,
+            0.004000005
+          ],
+          "rpy": [
+            0.0,
+            0.0,
+            1.570796
+          ],
+          "axis": [
+            0.0,
+            1.0,
+            0.0
+          ],
+          "lower": -0.37,
+          "upper": 0.37,
+          "velocity": 8.115
+        },
+        {
+          "name": "right_finger4_joint3",
+          "type": "revolute",
+          "parent": "right_finger4_link2",
+          "child": "right_finger4_link3",
+          "xyz": [
+            0.0,
+            0.004749999,
+            0.04361769
+          ],
+          "rpy": [
+            0.0,
+            0.0,
+            -1.571065
+          ],
+          "axis": [
+            0.0,
+            1.0,
+            0.0
+          ],
+          "lower": -0.4765,
+          "upper": 1.5487,
+          "velocity": 12.863
+        },
+        {
+          "name": "right_finger4_joint4",
+          "type": "revolute",
+          "parent": "right_finger4_link3",
+          "child": "right_finger4_link4",
+          "xyz": [
+            0.0,
+            -0.0002,
+            0.0295
+          ],
+          "rpy": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "axis": [
+            0.0,
+            1.0,
+            0.0
+          ],
+          "lower": -0.4777,
+          "upper": 1.5634,
+          "velocity": 13.578
+        },
+        {
+          "name": "right_finger4_tip_fixed",
+          "type": "fixed",
+          "parent": "right_finger4_link4",
+          "child": "right_finger4_tip_link",
+          "xyz": [
+            -0.00105961,
+            0.0001904508,
+            0.0267
+          ],
+          "rpy": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "axis": [
+            0.0,
+            0.0,
+            1.0
+          ],
+          "lower": 0,
+          "upper": 0,
+          "velocity": 0
+        },
+        {
+          "name": "right_finger5_joint1",
+          "type": "revolute",
+          "parent": "right_palm_link",
+          "child": "right_finger5_link1",
+          "xyz": [
+            -0.002268651,
+            -0.03400111,
+            0.07428134
+          ],
+          "rpy": [
+            0.1924837,
+            -0.09251723,
+            0.1576728
+          ],
+          "axis": [
+            0.0,
+            1.0,
+            0.0
+          ],
+          "lower": -0.1626,
+          "upper": 1.5585,
+          "velocity": 8.203
+        },
+        {
+          "name": "right_finger5_joint2",
+          "type": "revolute",
+          "parent": "right_finger5_link1",
+          "child": "right_finger5_link2",
+          "xyz": [
+            0.002200001,
+            0.0,
+            0.004000005
+          ],
+          "rpy": [
+            0.0,
+            0.0,
+            1.570796
+          ],
+          "axis": [
+            0.0,
+            1.0,
+            0.0
+          ],
+          "lower": -0.37,
+          "upper": 0.37,
+          "velocity": 8.115
+        },
+        {
+          "name": "right_finger5_joint3",
+          "type": "revolute",
+          "parent": "right_finger5_link2",
+          "child": "right_finger5_link3",
+          "xyz": [
+            0.0,
+            0.004749999,
+            0.04361769
+          ],
+          "rpy": [
+            0.0,
+            0.0,
+            -1.571065
+          ],
+          "axis": [
+            0.0,
+            1.0,
+            0.0
+          ],
+          "lower": -0.4768,
+          "upper": 1.549,
+          "velocity": 12.863
+        },
+        {
+          "name": "right_finger5_joint4",
+          "type": "revolute",
+          "parent": "right_finger5_link3",
+          "child": "right_finger5_link4",
+          "xyz": [
+            0.0,
+            -0.0002,
+            0.0295
+          ],
+          "rpy": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "axis": [
+            0.0,
+            1.0,
+            0.0
+          ],
+          "lower": -0.4683,
+          "upper": 1.5735,
+          "velocity": 13.578
+        },
+        {
+          "name": "right_finger5_tip_fixed",
+          "type": "fixed",
+          "parent": "right_finger5_link4",
+          "child": "right_finger5_tip_link",
+          "xyz": [
+            -0.001044639,
+            0.0002113095,
+            0.0267
+          ],
+          "rpy": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "axis": [
+            0.0,
+            0.0,
+            1.0
+          ],
+          "lower": 0,
+          "upper": 0,
+          "velocity": 0
+        }
+      ]
+    }
+  }
+}

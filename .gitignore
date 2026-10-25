@@ -1,0 +1,16 @@
+node_modules/
+dist/
+.DS_Store
+._*
+*.tsbuildinfo
+tmp/
+evidence/
+CFOP图片/
+docs/
+output/
+启动工作台.command
+.netlify/
+.env
+.env.*
+*.pem
+*.key

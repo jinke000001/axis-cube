@@ -1,0 +1,24 @@
+{
+  "name": "array-element-combiner",
+  "version": "1.0.0",
+  "description": "Combines or cancels adjacent elements of an array",
+  "main": "index.js",
+  "directories": {
+    "test": "test"
+  },
+  "devDependencies": {
+    "chai": "^4.1.0",
+    "mocha": "^3.4.2"
+  },
+  "scripts": {
+    "test": "mocha test/index.js",
+    "test:step": "node test/step-through.js"
+  },
+  "keywords": [],
+  "author": "Scott McKenzie",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/slammayjammay/array-element-combiner"
+  },
+  "license": "MIT"
+}

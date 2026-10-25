@@ -1,0 +1,22 @@
+{
+  "upstream": {
+    "repository": "https://github.com/slammayjammay/rubiks-cube-solver",
+    "commit": "7c4f292bf56bebd11bc498d0c33b25b94a9dc054",
+    "archive": "https://api.github.com/repos/slammayjammay/rubiks-cube-solver/tarball/7c4f292bf56bebd11bc498d0c33b25b94a9dc054",
+    "sha256": "b985e4a69159f9a5762d5c7e28c82960f6cb8b35706a1f071b1428f426b17f45"
+  },
+  "dependencies": [
+    {
+      "name": "gl-vec3",
+      "version": "1.0.3",
+      "tarball": "https://registry.npmjs.org/gl-vec3/-/gl-vec3-1.0.3.tgz",
+      "integrity": "sha512-B4cOpz3vpwRwkmjVsv+JKgBlPOFSLQApDAaUFrowXPgx6Y/SOhTmeciOKHvcFqls6DsGuZ+YHXo9Py5oVia7bA=="
+    },
+    {
+      "name": "array-element-combiner",
+      "version": "1.0.0",
+      "tarball": "https://registry.npmjs.org/array-element-combiner/-/array-element-combiner-1.0.0.tgz",
+      "integrity": "sha512-mBOJ8Q5Shs6ZEjsrvKpBH9u9wirFt4HkzfAaLxeY7lvb5WIp7ZJsK5tlutRrMjMER+FJV0uY5G+tWyUXJjnLKw=="
+    }
+  ]
+}
