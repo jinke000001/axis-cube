@@ -2,7 +2,7 @@
 
 本项目未复制 Kimi 展示站的页面源码、模型或动作库；该展示仅用于理解早期参考方向。场景、机械臂造型、动作编排和产品界面为本项目实现。
 
-2026-11-01 的 CFOP 指法演示器使用本项目原创教学手：Blender 源文件在 `art/teaching-hand/axis-teaching-hand.blend`，刚性关节规格在同目录 `rig.json`，网页加载 `public/models/teaching-hand/axis-teaching-hand.glb`。旧 Wuji 模型与许可保留，但新演示入口不加载该模型。
+2026-11-01 的 CFOP 指法演示器使用本项目原创教学手：Blender 源文件在 `art/teaching-hand/axis-teaching-hand.blend`，刚性关节规格在同目录 `rig.json`，网页加载 `public/models/teaching-hand/axis-teaching-hand.glb`。2026-11-03 起可见外壳改为暖白圆角皮肤，关节层级和 `rig.json` 碰撞尺寸未改。旧 Wuji 模型与许可保留，但新演示入口不加载该模型。
 
 CFOP 原表编号、公式、分组与彩色手指标注依据用户提供的 GAN 公式表，识别图由魔方状态重新生成。指法基础动作参考 [GAN Tymon PLL 教学](https://www.youtube.com/watch?v=ofeidRXHOWc) 和 [J Perm 指法教学](https://www.youtube.com/watch?v=wLuVF9Dk3AQ)。引用的观察段落、采用范围与差异在 `docs/cfop-finger-reference.md`；未复制教程视频、声音或模型进入网页，轨迹不是从教程恢复的人体动作捕捉。
 

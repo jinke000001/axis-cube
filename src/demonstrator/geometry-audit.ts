@@ -29,17 +29,19 @@ function fingerPrimitives(solutions:ReturnType<typeof solveTeachingPose>):Finger
     for(let i=0;i<3;i++) {
       const a=solution.joints[i],b=solution.joints[i+1],length=norm(sub(b,a)),unit=length>EPS?sub(b,a).map(value=>value/length) as Vec3:[0,1,0] as Vec3;
       const halfWidth=dimensions.linkWidths[i]/2,halfDepth=dimensions.linkDepths[i]/2;
-      // Source GLB shaft boxes end 2 mm before each joint. An inscribed
-      // capsule with extra rounded end clearance provides positive evidence,
-      // while the diagonal-radius outer capsule only flags possible overlap.
+      // Envelope from rig.json, matching the original shaft boxes that ended
+      // 2 mm before each joint. The visible skin is a separate rounded shell
+      // and is not remeasured from the GLB. An inscribed capsule is positive
+      // evidence; the diagonal-radius outer capsule only flags possible overlap.
       const radius=Math.hypot(halfWidth,Math.max(halfDepth,i<2?dimensions.inlayDepthOffset+dimensions.inlayDepth/2:0)),innerRadius=Math.max(0,Math.min(halfWidth,halfDepth)-dimensions.linkBevel),inset=dimensions.linkEndInset;
       result.push({hand:solution.hand,finger:solution.finger,label:`link-${i}`,a:addScaled(a,unit,inset),b:addScaled(b,unit,-inset),radius,
         innerA:addScaled(a,unit,inset+innerRadius),innerB:addScaled(b,unit,-inset-innerRadius),innerRadius,span:[i,i+1]});
     }
     solution.joints.forEach((joint,i)=> {
       const radius=i===3?dimensions.padRadius:dimensions.jointRadii[i];
-      // Blender's 12-by-8 UV spheres are polygonal. 94% of their radius is
-      // safely inside the authored tessellation, rather than its ideal sphere.
+      // Confirmed interiors use the authored radius and the 12-by-8 inradius
+      // factor in rig.json. The visible knuckle is a narrower band. 94% of the
+      // authored radius stays inside that tessellation, rather than an ideal sphere.
       const inscribedFactor=Math.cos(Math.PI/dimensions.uvSphereSegments)*Math.cos(Math.PI/(2*dimensions.uvSphereRings))*.99;
       result.push({hand:solution.hand,finger:solution.finger,label:i===3?'pad':`joint-${i}`,a:joint,b:joint,radius,innerA:joint,innerB:joint,innerRadius:radius*inscribedFactor,span:[i,i]});
     });
