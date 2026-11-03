@@ -1,0 +1,19 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <title>AXIS hand capture</title>
+  <style>
+    html, body { margin: 0; height: 100%; background: #0b1318; color: #d5e4ee; font: 15px/1.4 "Segoe UI", sans-serif; }
+    #stage { position: absolute; inset: 0; }
+    #caption { position: absolute; left: 22px; top: 16px; z-index: 2; letter-spacing: .04em; text-shadow: 0 1px 3px #000; }
+    #status { position: absolute; right: 22px; bottom: 14px; z-index: 2; color: #8aa0ae; font-size: 13px; }
+  </style>
+</head>
+<body>
+  <div id="caption"></div>
+  <div id="status"></div>
+  <div id="stage"></div>
+  <script type="module" src="./main.ts"></script>
+</body>
+</html>

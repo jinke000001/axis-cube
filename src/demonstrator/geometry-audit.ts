@@ -1,7 +1,8 @@
 import { Quaternion, Vector3 } from 'three';
 import { moveAngle, NORMALS, type Vec3 } from '../core/cube';
-import { contactPoint, sampleTeachingMotion, TIP_RADIUS, type TeachingFrame, type TeachingMotion, type TeachingPose } from './motion';
-import { FINGER_LENGTHS, fitTeachingFrame, solveTeachingArms, solveTeachingPose } from './rig';
+import { contactPoint, sampleTeachingMotion, type TeachingFrame, type TeachingMotion, type TeachingPose } from './motion';
+import { fitTeachingFrame, solveTeachingArms, solveTeachingPose } from './rig';
+import { armShell, fingerLengths, fingerPadRadius, jointShellRadius, linkShell } from './hand-model';
 import type { TeachingFinger, TeachingHand } from './types';
 import rigMetadata from '../../art/teaching-hand/rig.json';
 
@@ -23,25 +24,19 @@ interface FingerPrimitive extends CapsulePrimitive {
   finger:TeachingFinger;span:[number,number];
 }
 interface ArmPrimitive extends CapsulePrimitive {span:[number,number]}
-function fingerPrimitives(solutions:ReturnType<typeof solveTeachingPose>):FingerPrimitive[] {
+type HandSpec = Parameters<typeof linkShell>[2];
+function fingerPrimitives(solutions:ReturnType<typeof solveTeachingPose>, spec:HandSpec=rigMetadata):FingerPrimitive[] {
   const result:FingerPrimitive[]=[];
   for(const solution of solutions) {
     for(let i=0;i<3;i++) {
       const a=solution.joints[i],b=solution.joints[i+1],length=norm(sub(b,a)),unit=length>EPS?sub(b,a).map(value=>value/length) as Vec3:[0,1,0] as Vec3;
-      const halfWidth=dimensions.linkWidths[i]/2,halfDepth=dimensions.linkDepths[i]/2;
-      // Source GLB shaft boxes end 2 mm before each joint. An inscribed
-      // capsule with extra rounded end clearance provides positive evidence,
-      // while the diagonal-radius outer capsule only flags possible overlap.
-      const radius=Math.hypot(halfWidth,Math.max(halfDepth,i<2?dimensions.inlayDepthOffset+dimensions.inlayDepth/2:0)),innerRadius=Math.max(0,Math.min(halfWidth,halfDepth)-dimensions.linkBevel),inset=dimensions.linkEndInset;
-      result.push({hand:solution.hand,finger:solution.finger,label:`link-${i}`,a:addScaled(a,unit,inset),b:addScaled(b,unit,-inset),radius,
-        innerA:addScaled(a,unit,inset+innerRadius),innerB:addScaled(b,unit,-inset-innerRadius),innerRadius,span:[i,i+1]});
+      const shell=linkShell(solution.finger,i,spec);
+      result.push({hand:solution.hand,finger:solution.finger,label:`link-${i}`,a:addScaled(a,unit,shell.inset),b:addScaled(b,unit,-shell.inset),radius:shell.outer,
+        innerA:addScaled(a,unit,shell.inset+shell.inner),innerB:addScaled(b,unit,-shell.inset-shell.inner),innerRadius:shell.inner,span:[i,i+1]});
     }
     solution.joints.forEach((joint,i)=> {
-      const radius=i===3?dimensions.padRadius:dimensions.jointRadii[i];
-      // Blender's 12-by-8 UV spheres are polygonal. 94% of their radius is
-      // safely inside the authored tessellation, rather than its ideal sphere.
-      const inscribedFactor=Math.cos(Math.PI/dimensions.uvSphereSegments)*Math.cos(Math.PI/(2*dimensions.uvSphereRings))*.99;
-      result.push({hand:solution.hand,finger:solution.finger,label:i===3?'pad':`joint-${i}`,a:joint,b:joint,radius,innerA:joint,innerB:joint,innerRadius:radius*inscribedFactor,span:[i,i]});
+      const shell=jointShellRadius(solution.finger,i,spec);
+      result.push({hand:solution.hand,finger:solution.finger,label:i===3?'pad':`joint-${i}`,a:joint,b:joint,radius:shell.outer,innerA:joint,innerB:joint,innerRadius:shell.inner,span:[i,i]});
     });
   }
   return result;
@@ -113,8 +108,9 @@ function checkFingerPalms(primitives:FingerPrimitive[],solutions:ReturnType<type
       const delta=sub(primitive.b,primitive.a),length=norm(delta),direction=length>EPS?delta.map(value=>value/length) as Vec3:[0,1,0] as Vec3;
       // Only the local MCP connection ball is exempt. A proximal shaft that
       // points backwards through the opposite palm wall remains a collision.
-      outer={a:addScaled(origin,direction,dimensions.jointRadii[0]+primitive.radius+tolerance),b:primitive.b};
-      inner={a:addScaled(origin,direction,dimensions.jointRadii[0]+primitive.innerRadius+tolerance),b:primitive.innerB};
+      const ball=jointShellRadius(primitive.finger,0).outer;
+      outer={a:addScaled(origin,direction,ball+primitive.radius+tolerance),b:primitive.b};
+      inner={a:addScaled(origin,direction,ball+primitive.innerRadius+tolerance),b:primitive.innerB};
     }
     if(segmentSegmentDistance(outer.a,outer.b,palm.center,palm.center)>norm(palm.half)+primitive.radius+tolerance)continue;
     if(capsuleBoxClearance(outer,primitive.radius,palm)>=-tolerance)continue;
@@ -155,8 +151,8 @@ function armPrimitives(arms:ReturnType<typeof solveTeachingArms>):ArmPrimitive[]
   const primitives:ArmPrimitive[]=[];
   const sphereFactor=Math.cos(Math.PI/dimensions.uvSphereSegments)*Math.cos(Math.PI/(2*dimensions.uvSphereRings))*.99;
   for(const arm of arms) {
-    const points=[arm.shoulder,arm.elbow,arm.wrist],halfWidth=dimensions.armHousingWidth/2,halfDepth=dimensions.armHousingDepth/2;
-    const radius=Math.hypot(halfWidth,halfDepth),innerRadius=Math.max(0,Math.min(halfWidth,halfDepth)-dimensions.armHousingBevel),inset=dimensions.armEndInset;
+    const points=[arm.shoulder,arm.elbow,arm.wrist],shell=armShell();
+    const radius=shell.outer,innerRadius=shell.inner,inset=shell.inset;
     for(let i=0;i<2;i++) {
       const a=points[i],b=points[i+1],length=norm(sub(b,a)),unit=length>EPS?sub(b,a).map(value=>value/length) as Vec3:[0,1,0] as Vec3;
       primitives.push({hand:arm.hand,label:i===0?'upper housing':'forearm housing',a:addScaled(a,unit,inset),b:addScaled(b,unit,-inset),radius,
@@ -201,7 +197,7 @@ function exteriorCapsuleSegments(segment:Segment,radius:number,center:Vec3,conne
   if(far<1)result.push({a:addScaled(segment.a,d,Math.max(0,far)),b:segment.b});
   return result;
 }
-function checkFingerVolumes(primitives:FingerPrimitive[],solutions:ReturnType<typeof solveTeachingPose>,tolerance:number) {
+function checkFingerVolumes(primitives:FingerPrimitive[],solutions:ReturnType<typeof solveTeachingPose>,tolerance:number,spec:HandSpec=rigMetadata) {
   const confirmed:GeometryIssue[]=[];let possibleFingerContacts=0;
   for(let i=0;i<primitives.length;i++)for(let j=i+1;j<primitives.length;j++) {
     const a=primitives[i],b=primitives[j],shared=a.hand===b.hand&&a.finger===b.finger?Math.max(a.span[0],b.span[0]):-1;
@@ -212,16 +208,17 @@ function checkFingerVolumes(primitives:FingerPrimitive[],solutions:ReturnType<ty
     let innerA:Segment[]=[{a:a.innerA,b:a.innerB}],innerB:Segment[]=[{a:b.innerA,b:b.innerB}];
     if(connected) {
       const joint=solutions.find(solution=>solution.hand===a.hand&&solution.finger===a.finger)!.joints[shared];
-      innerA=exteriorCapsuleSegments(innerA[0],a.innerRadius,joint,dimensions.jointRadii[shared],tolerance);
-      innerB=exteriorCapsuleSegments(innerB[0],b.innerRadius,joint,dimensions.jointRadii[shared],tolerance);
+      const ball=jointShellRadius(a.finger,shared,spec).outer;
+      innerA=exteriorCapsuleSegments(innerA[0],a.innerRadius,joint,ball,tolerance);
+      innerB=exteriorCapsuleSegments(innerB[0],b.innerRadius,joint,ball,tolerance);
     }
     const depth=Math.max(0,...innerA.flatMap(x=>innerB.map(y=>a.innerRadius+b.innerRadius-segmentSegmentDistance(x.a,x.b,y.a,y.b))));
     if(depth>tolerance)confirmed.push({kind:'finger-penetration',depthMetres:depth,hand:a.hand,finger:a.finger,otherHand:b.hand,otherFinger:b.finger,detail:`${a.label} intersects ${b.label}${connected?' outside the common finger joint assembly ball':''}.`});
   }
   return {confirmed,possibleFingerContacts};
 }
-export function auditFingerSelfVolumes(solutions:ReturnType<typeof solveTeachingPose>,tolerance=.0003) {
-  return checkFingerVolumes(fingerPrimitives(solutions),solutions,tolerance);
+export function auditFingerSelfVolumes(solutions:ReturnType<typeof solveTeachingPose>,tolerance=.0003,spec:HandSpec=rigMetadata) {
+  return checkFingerVolumes(fingerPrimitives(solutions,spec),solutions,tolerance,spec);
 }
 function checkArmHandVolumes(pose:PalmTransforms,arms:ReturnType<typeof solveTeachingArms>,armParts:ArmPrimitive[],fingers:FingerPrimitive[],palms:ReturnType<typeof palmShapes>,tolerance:number) {
   const confirmed:GeometryIssue[]=[];let possibleArmArmContacts=0,possibleArmHandContacts=0;
@@ -305,7 +302,7 @@ function auditEvaluatedFrame(frame:TeachingFrame,solutions:ReturnType<typeof sol
     report.maximumReachErrorMetres=Math.max(report.maximumReachErrorMetres,solution.reachError);
     if(solution.reachError>tolerance)report.confirmed.push({kind:'unreachable',depthMetres:solution.reachError,hand:solution.hand,finger:solution.finger,detail:'Rigid fingertip cannot reach its requested target.'});
     for(let i=0;i<3;i++) {
-      const error=Math.abs(norm(sub(solution.joints[i+1],solution.joints[i]))-FINGER_LENGTHS[i]);
+      const error=Math.abs(norm(sub(solution.joints[i+1],solution.joints[i]))-fingerLengths(solution.finger)[i]);
       report.maximumLengthErrorMetres=Math.max(report.maximumLengthErrorMetres,error);
       if(error>1e-7)report.confirmed.push({kind:'non-rigid',depthMetres:error,hand:solution.hand,finger:solution.finger,detail:`Link ${i} differs from authored length.`});
     }
@@ -349,7 +346,7 @@ function auditEvaluatedFrame(frame:TeachingFrame,solutions:ReturnType<typeof sol
     const solution=finiteSolutions.find(solution=>solution.hand===contact.hand&&solution.finger===contact.finger);
     if(!solution)continue;
     const surface=contactPoint(contact,frame.move,frame.angle),normal=vector(surface.normal).normalize();
-    const expected=vector(surface.point).addScaledVector(normal,TIP_RADIUS),actual=vector(solution.joints[3]);
+    const expected=vector(surface.point).addScaledVector(normal,fingerPadRadius(contact.finger)),actual=vector(solution.joints[3]);
     const error=actual.distanceTo(expected);report.maximumContactSlipMetres=Math.max(report.maximumContactSlipMetres,error);
     if(error>tolerance)report.confirmed.push({kind:'contact-slip',depthMetres:error,hand:contact.hand,finger:contact.finger,cubie:contact.cubie,detail:'Actual rigid fingertip misses the declared cubie-local contact.'});
     const direction=vector(solution.joints[2]).sub(actual).normalize().dot(normal);

@@ -3,16 +3,18 @@ import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { NORMALS, moveAngle, type Vec3 } from '../core/cube';
 import { FINGER_NAMES, HANDS, getCompiledTeachingMotion, getCompiledTeachingMotionIds, withAuthoringMotionReference, sampleTeachingMotion, type TeachingFrame, type TeachingPose, type TeachingMotion, type TeachingContact } from './motion';
 import type { TeachingFinger, TeachingHand } from './types';
-import { FINGER_LENGTHS, FINGER_BASES, REST_TIP_HEIGHTS } from './rig-spec';
+import { FINGER_BASES } from './rig-spec';
 import { frameCubeShapes, obbPenetration, type RoundedBox } from './geometry-shapes';
 import {buildArmTrajectory,validateArmTrajectory,sampleArmTrajectory,ARM_TRAJECTORY_PARAMETERS,type ArmTrajectoryData} from './arm-trajectory';
 import {interpolateFingerDirections} from './finger-path';
 import specification from '../../art/teaching-hand/rig.json';
+import { GEOMETRY_DIGEST, HAND_MODEL_ID, fingerLengths, fingerPadRadius, jointShellRadius, linkShell, palmCenterLocal, mirroredRest } from './hand-model';
 export { FINGER_LENGTHS, FINGER_BASES } from './rig-spec';
+export { GEOMETRY_DIGEST, HAND_MODEL_ID };
 const UP=new Vector3(0,1,0);
 const v=(p:readonly number[])=>new Vector3().fromArray(p);
 const a=(p:Vector3)=>p.toArray() as Vec3;
-const restLocal=(hand:TeachingHand,finger:TeachingFinger)=>new Vector3((hand==='right'?-1:1)*.01,REST_TIP_HEIGHTS[finger],finger==='thumb'?.055:-.055);
+const restLocal=(hand:TeachingHand,finger:TeachingFinger)=>new Vector3().fromArray(mirroredRest(hand,finger));
 function isResting(pose:TeachingPose,hand:TeachingHand,finger:TeachingFinger) {
   return pose[hand].tips[finger].resting===true;
 }
@@ -110,7 +112,7 @@ function poseEnvelope(pose:TeachingPose,frame?:Pick<TeachingFrame,'move'|'angle'
   const cube=(point:Vector3)=>{let gap=Infinity;for(const field of envelopes)gap=Math.min(gap,field(point));return gap;};
   const boxes=HANDS.flatMap(hand=> {
     const h=pose[hand],q=new Quaternion().fromArray(h.rotation),sign=hand==='right'?1:-1;
-    return [{center:v(h.palm),inverse:q.clone().invert(),half:v(specification.geometry.palmSize).multiplyScalar(.5)},
+    return [{center:new Vector3().fromArray(palmCenterLocal(hand)).applyQuaternion(q).add(v(h.palm)),inverse:q.clone().invert(),half:v(specification.geometry.palmSize).multiplyScalar(.5)},
       {center:new Vector3(-sign*specification.geometry.palmInnerOffset,0,0).applyQuaternion(q).add(v(h.palm)),inverse:q.clone().invert(),half:v(specification.geometry.palmInnerSize).multiplyScalar(.5)}];
   });
   const couplers=HANDS.map(hand=>v(specification.wristAttachment).applyQuaternion(new Quaternion().fromArray(pose[hand].rotation)).add(v(pose[hand].palm)));
@@ -162,31 +164,33 @@ function segmentDistance(a:Vector3,b:Vector3,c:Vector3,d:Vector3) {
     if(t<0){t=0;s=clamp(-dd/aa);}else if(t>1){t=1;s=clamp((bb-dd)/aa);}}
   return Math.hypot(wx+ux*s-vx*t,wy+uy*s-vy*t,wz+uz*s-vz*t);
 }
-function adjacentLinkClearance(points:Vector3[]) {
+function adjacentLinkClearance(points:Vector3[],finger?:TeachingFinger) {
   let gap=Infinity;
   for(let joint=1;joint<points.length-1;joint++) {
     const center=points[joint],before=points[joint-1],after=points[joint+1];
     const left=before.clone().sub(center).normalize(),right=after.clone().sub(center).normalize();
-    const radius=.0028,trim=specification.geometry.jointRadii[joint]+radius+.0003;
+    const radius=finger?Math.min(linkShell(finger,joint-1).outer,linkShell(finger,Math.min(2,joint)).outer):.0028;
+    const ball=finger?jointShellRadius(finger,joint).outer:specification.geometry.jointRadii[Math.min(joint,specification.geometry.jointRadii.length-1)];
+    const trim=ball+radius+.0003;
     gap=Math.min(gap,segmentDistance(before.clone().addScaledVector(left,-.002),center.clone().addScaledVector(left,trim),
       center.clone().addScaledVector(right,trim),after.clone().addScaledVector(right,-.002))-radius*2);
   }
   return gap;
 }
-type ObstacleLink={a:Vector3;b:Vector3;center?:Vector3;radius?:number};
-function otherClearance(points:Vector3[],obstacles:ObstacleLink[]) {
+type ObstacleLink={a:Vector3;b:Vector3;center?:Vector3;radius?:number;shell?:number};
+function otherClearance(points:Vector3[],obstacles:ObstacleLink[],shells:number[]=[.0041,.0036,.0026]) {
   let min=Infinity;
   for(let i=0;i<points.length-1;i++) {
-    const center=points[i].clone().add(points[i+1]).multiplyScalar(.5),radius=points[i].distanceTo(points[i+1])*.5;
+    const center=points[i].clone().add(points[i+1]).multiplyScalar(.5),radius=points[i].distanceTo(points[i+1])*.5,self=shells[Math.min(i,shells.length-1)];
     for(const o of obstacles) {
-      const bound=radius+o.radius!+.012;
-      if(center.distanceToSquared(o.center!)>bound*bound)continue;
-      min=Math.min(min,segmentDistance(points[i],points[i+1],o.a,o.b)-.0082);
+      const bound=radius+(o.radius??0)+self+(o.shell??.004)+.004;
+      if(o.center&&center.distanceToSquared(o.center)>bound*bound)continue;
+      min=Math.min(min,segmentDistance(points[i],points[i+1],o.a,o.b)-self-(o.shell??.004));
     }
   }
   return min;
 }
-function twoLink(start:Vector3,end:Vector3,l1:number,l2:number,pole:Vector3,avoidCube:boolean,tip?:Vector3,obstacles:ObstacleLink[]=[],field:DistanceField=boxDistance,linkRadius=.0036) {
+function twoLink(start:Vector3,end:Vector3,l1:number,l2:number,pole:Vector3,avoidCube:boolean,tip?:Vector3,obstacles:ObstacleLink[]=[],field:DistanceField=boxDistance,linkRadius=.0036,distalRadius=linkRadius,finger?:TeachingFinger) {
   const delta=end.clone().sub(start), actual=delta.length();
   const distance=Math.max(Math.abs(l1-l2)+1e-6,Math.min(l1+l2-1e-6,actual));
   const direction=delta.normalize();
@@ -205,9 +209,10 @@ function twoLink(start:Vector3,end:Vector3,l1:number,l2:number,pole:Vector3,avoi
     const angle=i*Math.PI/16;
     const elbow=start.clone().addScaledVector(direction,along)
       .addScaledVector(radial,radius*Math.cos(angle)).addScaledVector(binormal,radius*Math.sin(angle));
-    const self=tip?Math.min(segmentDistance(start,elbow,target,tip)-.0077,
-      segmentDistance(elbow,target,tip,tip)-.0069,adjacentLinkClearance([start,elbow,target,tip])):1;
-    const other=obstacles.length?otherClearance(tip?[start,elbow,target,tip]:[start,elbow,target],obstacles):1;
+    const pair=linkRadius+distalRadius;
+    const self=tip?Math.min(segmentDistance(start,elbow,target,tip)-pair,
+      segmentDistance(elbow,target,tip,tip)-pair,adjacentLinkClearance([start,elbow,target,tip],finger)):1;
+    const other=obstacles.length?otherClearance(tip?[start,elbow,target,tip]:[start,elbow,target],obstacles,[linkRadius,linkRadius,distalRadius]):1;
     const gap=avoidCube?Math.min(linkClearance(start,elbow,linkRadius,field),linkClearance(elbow,target,linkRadius,field),field(elbow)-Math.max(.0041,linkRadius),field(target)-Math.max(.0041,linkRadius),self,other):1;
     const cost=Math.max(0,.001-gap)*1e4+angle*angle*.0004;
     if(cost<score) {score=cost;best=elbow;clearance=gap;}
@@ -292,27 +297,27 @@ function solvePoseWithBranch(pose:TeachingPose,frame?:PoseFrame,reference?:Branc
     const deltaQ=reference?q.clone().multiply(new Quaternion().fromArray(reference.pose[hand].rotation).invert()):new Quaternion();
     if(previous)pole=v(previous.joints[1]).sub(v(previous.joints[0])).applyQuaternion(deltaQ).add(origin);
     let best:ReturnType<typeof twoLink>|undefined,bestDirection=normal,score=Infinity,bestGap=-Infinity;
-    const obstacles:ObstacleLink[]=solvedFingers.flatMap(s=>s.joints.slice(0,3).map((p,i)=>({a:v(p),b:v(s.joints[i+1])})));
+    const obstacles:ObstacleLink[]=solvedFingers.flatMap(s=>s.joints.slice(0,3).map((p,i)=>({a:v(p),b:v(s.joints[i+1]),shell:linkShell(s.finger,i).outer})));
     // Even a digit solved later owns its MCP joint already. Avoid that fixed
     // bearing rather than allowing an earlier finger to cut through its base.
     for(const otherHand of HANDS)for(const otherFinger of FINGER_NAMES) {
       if(otherHand===hand&&otherFinger===finger)continue;
       const oh=pose[otherHand],os=otherHand==='right'?1:-1,ob=FINGER_BASES[otherFinger];
       const point=new Vector3(os*ob[0],ob[1],ob[2]).applyQuaternion(new Quaternion().fromArray(oh.rotation)).add(v(oh.palm));
-      obstacles.push({a:point,b:point});
+      obstacles.push({a:point,b:point,shell:jointShellRadius(otherFinger,0).outer});
       if(constraints.some(c=>c.hand===otherHand&&c.finger===otherFinger)||isResting(pose,otherHand,otherFinger)) {
-        const tipPoint=v(oh.tips[otherFinger].point);obstacles.push({a:tipPoint,b:tipPoint});
+        const tipPoint=v(oh.tips[otherFinger].point);obstacles.push({a:tipPoint,b:tipPoint,shell:jointShellRadius(otherFinger,3).outer});
       }
     }
     for(const obstacle of obstacles){obstacle.center=obstacle.a.clone().add(obstacle.b).multiplyScalar(.5);obstacle.radius=obstacle.a.distanceTo(obstacle.b)*.5;}
     if(!contact)for(let pass=0;pass<6;pass++)for(const obstacle of obstacles) {
       const line=obstacle.b.clone().sub(obstacle.a),length=line.lengthSq();
       const closest=obstacle.a.clone().addScaledVector(line,length?Math.max(0,Math.min(1,end.clone().sub(obstacle.a).dot(line)/length)):0);
-      const delta=end.clone().sub(closest),gap=delta.length();
-      if(gap<.009) {
+      const delta=end.clone().sub(closest),gap=delta.length(),keep=Math.max(.009,(obstacle.shell??.004)+fingerPadRadius(finger));
+      if(gap<keep) {
         if(gap<1e-8)delta.set(sign,0,0).applyQuaternion(q);else delta.divideScalar(gap);
-        const proposed=closest.addScaledVector(delta,.009);
-        if(field(proposed)>.0034)end.copy(proposed);
+        const proposed=closest.addScaledVector(delta,keep);
+        if(field(proposed)>fingerPadRadius(finger))end.copy(proposed);
       }
     }
     const toward=origin.clone().sub(end).normalize();
@@ -334,9 +339,10 @@ function solvePoseWithBranch(pose:TeachingPose,frame?:PoseFrame,reference?:Branc
     for(let candidateIndex=0;candidateIndex<candidates.length;candidateIndex++) {
       const {direction,tilt}=candidates[candidateIndex];
       constrainDistalDirection(direction,contact,normal);
-      const distal=end.clone().addScaledVector(direction,FINGER_LENGTHS[2]);
-      const solved=twoLink(origin,distal,FINGER_LENGTHS[0],FINGER_LENGTHS[1],pole,true,end,obstacles,field);
-      const gap=Math.min(solved.clearance,linkClearance(solved.target,end,.0026,field));
+      const lengths=fingerLengths(finger),distalRadius=linkShell(finger,2).outer;
+      const distal=end.clone().addScaledVector(direction,lengths[2]);
+      const solved=twoLink(origin,distal,lengths[0],lengths[1],pole,true,end,obstacles,field,linkShell(finger,0).outer,distalRadius,finger);
+      const gap=Math.min(solved.clearance,linkClearance(solved.target,end,distalRadius,field));
       const continuity=previous?solved.elbow.distanceTo(v(previous.joints[1]).sub(v(reference!.pose[hand].palm)).applyQuaternion(deltaQ).add(v(h.palm)))
         +solved.target.distanceTo(v(previous.joints[2]).sub(v(reference!.pose[hand].palm)).applyQuaternion(deltaQ).add(v(h.palm))):0;
       const cost=solved.error*1e5+Math.max(0,.0005-gap)*1e4+tilt*.002+continuity*.5;
@@ -356,9 +362,10 @@ function solvePoseWithBranch(pose:TeachingPose,frame?:PoseFrame,reference?:Branc
     }
     const solved=best!;
     // A failed reach is visible to verification; never stretch the GLB links.
-    const actualEnd=solved.target.clone().addScaledVector(bestDirection,-FINGER_LENGTHS[2]);
+    const lengths=fingerLengths(finger),distalRadius=linkShell(finger,2).outer;
+    const actualEnd=solved.target.clone().addScaledVector(bestDirection,-lengths[2]);
     solvedFingers.push({hand,finger,joints:[a(origin),a(solved.elbow),a(solved.target),a(actualEnd)] as RigidFingerSolution['joints'],
-      reachError:actualEnd.distanceTo(end),minimumClearance:Math.min(solved.clearance,linkClearance(solved.target,actualEnd,.0026,field))});
+      reachError:actualEnd.distanceTo(end),minimumClearance:Math.min(solved.clearance,linkClearance(solved.target,actualEnd,distalRadius,field))});
   }
   return solvedFingers.sort((a,b)=>HANDS.indexOf(a.hand)-HANDS.indexOf(b.hand)||FINGER_NAMES.indexOf(a.finger)-FINGER_NAMES.indexOf(b.finger));
 }
@@ -402,7 +409,7 @@ function branchTrack(program:TeachingMotion):BranchTrack {
               const outward=new Vector3(1,0,0).applyQuaternion(palmQ),via=v(path.distalReturnVia).normalize().applyQuaternion(palmQ),original=v(finger.joints[3]).sub(v(finger.joints[2])).normalize();
               const from=time<=path.via?outward:via,to=time<=path.via?via:original,blend=time<=path.via?smooth((time-path.unturned)/(path.via-path.unturned)):smooth((time-path.via)/(path.end-path.via));
               const direction=from.clone().applyQuaternion(new Quaternion().slerp(new Quaternion().setFromUnitVectors(from,to),blend));
-              points[3]=points[2].clone().addScaledVector(direction,FINGER_LENGTHS[2]);
+              points[3]=points[2].clone().addScaledVector(direction,fingerLengths(path.yielding)[2]);
             }
             result.solutions[ringOwner]={...finger,joints:points.map(a) as RigidFingerSolution['joints']};
             if(time>=path.yielded&&time<=path.retired) {
@@ -439,13 +446,14 @@ function branchTrack(program:TeachingMotion):BranchTrack {
           const weight=time<path.supportStart+path.supportDuration?smooth((time-path.supportStart)/path.supportDuration):time>path.supportRestore?smooth((path.referenceEnd-time)/(path.referenceEnd-path.supportRestore)):1;
           if(weight>0) {
             if(!frame.contacts.some(c=>c.hand===path.supportHand&&c.finger===path.supportFinger))throw new Error('承托指调整前必须真实接稳');
-            const finger=source.solutions[owner],origin=v(finger.joints[0]),pad=v(finger.joints[3]),dip=pad.clone().addScaledVector(v(path.supportDirection).normalize(),FINGER_LENGTHS[2]);
+            const lengths=fingerLengths(path.supportFinger);
+            const finger=source.solutions[owner],origin=v(finger.joints[0]),pad=v(finger.joints[3]),dip=pad.clone().addScaledVector(v(path.supportDirection).normalize(),lengths[2]);
             const axis=dip.clone().sub(origin),distance=axis.length();
-            if(distance>FINGER_LENGTHS[0]+FINGER_LENGTHS[1]||distance<Math.abs(FINGER_LENGTHS[0]-FINGER_LENGTHS[1]))throw new Error('回接承托分支不可达');
-            axis.normalize();const along=(FINGER_LENGTHS[0]**2-FINGER_LENGTHS[1]**2+distance*distance)/(2*distance);
+            if(distance>lengths[0]+lengths[1]||distance<Math.abs(lengths[0]-lengths[1]))throw new Error('回接承托分支不可达');
+            axis.normalize();const along=(lengths[0]**2-lengths[1]**2+distance*distance)/(2*distance);
             const radial=v(path.supportPole).addScaledVector(axis,-v(path.supportPole).dot(axis));
             if(radial.lengthSq()<1e-10)throw new Error('回接承托弯曲平面退化');
-            const pip=origin.clone().addScaledVector(axis,along).addScaledVector(radial.normalize(),Math.sqrt(Math.max(0,FINGER_LENGTHS[0]**2-along*along)));
+            const pip=origin.clone().addScaledVector(axis,along).addScaledVector(radial.normalize(),Math.sqrt(Math.max(0,lengths[0]**2-along*along)));
             const target:BranchReference={pose:source.pose,solutions:structuredClone(source.solutions)};
             target.solutions[owner]={...finger,joints:[a(origin),a(pip),a(dip),a(pad)]};
             source.solutions[owner]=interpolateBranch(frame.pose,source,target,weight,zero(),frame.contacts,owner)[0];
@@ -539,11 +547,12 @@ function branchTrack(program:TeachingMotion):BranchTrack {
         const supportOwner=supportBegin.solutions.findIndex(s=>s.hand===path.supportHand&&s.finger===path.supportFinger);
         const ringOwner=arrival.solutions.findIndex(s=>s.hand===path.hand&&s.finger===path.yielding),middleOwner=arrival.solutions.findIndex(s=>s.hand===path.hand&&s.finger===path.incoming);
         const original=supportBegin.solutions[supportOwner],origin=v(original.joints[0]),pad=v(original.joints[3]);
-        const distal=pad.clone().addScaledVector(v(path.supportDirection).normalize(),FINGER_LENGTHS[2]),axis=distal.clone().sub(origin),distance=axis.length();axis.normalize();
-        if(distance<=Math.abs(FINGER_LENGTHS[0]-FINGER_LENGTHS[1])||distance>=FINGER_LENGTHS[0]+FINGER_LENGTHS[1])throw new Error('承托外角分支超出刚性骨长');
+        const lengths=fingerLengths(path.supportFinger);
+        const distal=pad.clone().addScaledVector(v(path.supportDirection).normalize(),lengths[2]),axis=distal.clone().sub(origin),distance=axis.length();axis.normalize();
+        if(distance<=Math.abs(lengths[0]-lengths[1])||distance>=lengths[0]+lengths[1])throw new Error('承托外角分支超出刚性骨长');
         const radial=v(path.supportPole).addScaledVector(axis,-v(path.supportPole).dot(axis));
         if(radial.lengthSq()<1e-8)throw new Error('承托外角分支方向退化');radial.normalize();
-        const along=(FINGER_LENGTHS[0]**2-FINGER_LENGTHS[1]**2+distance**2)/(2*distance),radius=Math.sqrt(FINGER_LENGTHS[0]**2-along**2);
+        const along=(lengths[0]**2-lengths[1]**2+distance**2)/(2*distance),radius=Math.sqrt(lengths[0]**2-along**2);
         const elbow=origin.clone().addScaledVector(axis,along).addScaledVector(radial,radius);
         const safe:RigidFingerSolution={...original,joints:[a(origin),a(elbow),a(distal),a(pad)],reachError:0};
         const safeReference=(source:BranchReference):BranchReference=>{
@@ -870,7 +879,7 @@ function branchTrack(program:TeachingMotion):BranchTrack {
           for(let link=0;link<3;link++) {
             const direction=v(source.joints[link+1]).sub(v(source.joints[link])).normalize().applyQuaternion(sourceInverse)
               .applyQuaternion(rotation).applyAxisAngle(axis,roll).applyQuaternion(q);
-            points.push(points.at(-1)!.clone().addScaledVector(direction,FINGER_LENGTHS[link]));
+            points.push(points.at(-1)!.clone().addScaledVector(direction,fingerLengths(owner.finger)[link]));
           }
           const solution={...source,joints:points.map(a) as RigidFingerSolution['joints'],reachError:0};
           candidates.push({middle:{pose:middleFrame.pose,solutions:begin.solutions.map((s,i)=>i===finger?solution:s)}});
@@ -888,7 +897,7 @@ function branchTrack(program:TeachingMotion):BranchTrack {
           for(let link=0;link<3;link++) {
             const direction=v(source.joints[link+1]).sub(v(source.joints[link])).normalize().applyQuaternion(inverse)
               .applyQuaternion(rotation).applyAxisAngle(axis,roll).applyQuaternion(q);
-            points.push(points.at(-1)!.clone().addScaledVector(direction,FINGER_LENGTHS[link]));
+            points.push(points.at(-1)!.clone().addScaledVector(direction,fingerLengths(owner.finger)[link]));
           }
           const solution={...source,joints:points.map(a) as RigidFingerSolution['joints'],reachError:0};
           candidates.push({middle:{pose:middleFrame.pose,solutions:begin.solutions.map((s,i)=>i===finger?solution:s)}});
@@ -1154,8 +1163,9 @@ function branchTrack(program:TeachingMotion):BranchTrack {
     const first=times.findIndex(t=>Math.abs(t-path.start)<1e-7),last=times.findIndex(t=>Math.abs(t-path.end)<1e-7);
     if(first<0||last<=first||path.face!=='F')throw new Error('承托净空边界不完整');
     const owner=references[first].solutions.findIndex(f=>f.hand===path.hand&&f.finger===path.finger);
+    const lengths=fingerLengths(path.finger);
     const initial=references[first].solutions[owner],pad=v(initial.joints[3]),offsetX=initial.joints[2][0]-pad.x,offsetY=path.distalHeight-pad.y;
-    const square=FINGER_LENGTHS[2]**2-offsetX**2-offsetY**2;
+    const square=lengths[2]**2-offsetX**2-offsetY**2;
     if(square<=0)throw new Error('承托远节方向不可达');
     const direction=new Vector3(offsetX,offsetY,Math.sqrt(square)).normalize();
     const smooth=(u:number)=>{u=Math.max(0,Math.min(1,u));return u*u*u*(u*(u*6-15)+10);};
@@ -1164,11 +1174,11 @@ function branchTrack(program:TeachingMotion):BranchTrack {
       const weight=time<path.ready?smooth((time-path.start)/(path.ready-path.start)):time<path.restore?1:1-smooth((time-path.restore)/(path.end-path.restore));
       const mcp=v(old.joints[0]),tip=v(old.joints[3]),oldAxis=v(old.joints[2]).sub(mcp).normalize(),oldDirection=v(old.joints[2]).sub(tip).normalize();
       const nextDirection=oldDirection.clone().applyQuaternion(new Quaternion().slerp(new Quaternion().setFromUnitVectors(oldDirection,direction),weight));
-      const dip=tip.clone().addScaledVector(nextDirection,FINGER_LENGTHS[2]),delta=dip.clone().sub(mcp),distance=delta.length();
-      if(distance<=Math.abs(FINGER_LENGTHS[0]-FINGER_LENGTHS[1])||distance>=FINGER_LENGTHS[0]+FINGER_LENGTHS[1])throw new Error('承托避让不能拉伸指骨');
+      const dip=tip.clone().addScaledVector(nextDirection,lengths[2]),delta=dip.clone().sub(mcp),distance=delta.length();
+      if(distance<=Math.abs(lengths[0]-lengths[1])||distance>=lengths[0]+lengths[1])throw new Error('承托避让不能拉伸指骨');
       const axis=delta.normalize(),radial=v(old.joints[1]).sub(mcp);
       radial.addScaledVector(oldAxis,-radial.dot(oldAxis)).normalize().applyQuaternion(new Quaternion().setFromUnitVectors(oldAxis,axis));
-      const along=(FINGER_LENGTHS[0]**2-FINGER_LENGTHS[1]**2+distance**2)/(2*distance),radius=Math.sqrt(FINGER_LENGTHS[0]**2-along**2);
+      const along=(lengths[0]**2-lengths[1]**2+distance**2)/(2*distance),radius=Math.sqrt(lengths[0]**2-along**2);
       const pip=mcp.clone().addScaledVector(axis,along).addScaledVector(radial,radius);
       references[i].solutions[owner]={...old,joints:[a(mcp),a(pip),a(dip),a(tip)],reachError:0};
     }
@@ -1188,7 +1198,7 @@ function applyIdleParking(program:TeachingMotion,times:number[],references:Branc
       const reference=references[i],u=Math.max(0,Math.min(1,(times[i]-path.start)/(path.end-path.start))),blend=u*u*(3-2*u);
       const directions=interpolateFingerDirections(from,path.directions,blend),h=reference.pose[path.hand],q=new Quaternion().fromArray(h.rotation),sign=path.hand==='right'?1:-1,base=FINGER_BASES[path.finger];
       const points=[new Vector3(sign*base[0],base[1],base[2]).applyQuaternion(q).add(v(h.palm))];
-      for(let j=0;j<3;j++)points.push(points[j].clone().addScaledVector(v(directions[j]).applyQuaternion(q),FINGER_LENGTHS[j]));
+      for(let j=0;j<3;j++)points.push(points[j].clone().addScaledVector(v(directions[j]).applyQuaternion(q),fingerLengths(path.finger)[j]));
       reference.solutions[owner]={...old,joints:points.map(a) as RigidFingerSolution['joints'],reachError:0};
     }
   }
@@ -1207,12 +1217,12 @@ function applyJointReceptions(program:TeachingMotion,times:number[],references:B
     for(let i=first+1;i<last;i++) {
       const u=(times[i]-path.start)/(path.end-path.start),ds=interpolateFingerDirections(from,to,u*u*(3-2*u)),q=new Quaternion().fromArray(references[i].pose[path.hand].rotation);
       const old=references[i].solutions[owner],points=[v(old.joints[0])];
-      for(let j=0;j<3;j++)points.push(points[j].clone().addScaledVector(v(ds[j]).applyQuaternion(q),FINGER_LENGTHS[j]));
+      for(let j=0;j<3;j++)points.push(points[j].clone().addScaledVector(v(ds[j]).applyQuaternion(q),fingerLengths(path.finger)[j]));
       references[i].solutions[owner]={...old,joints:points.map(a) as RigidFingerSolution['joints'],reachError:0};
     }
   }
 }
-interface TeachingTrajectoryData {version:number;signature:string;times:number[];directions:number[][];biases:BranchBias[][];arms:ArmTrajectoryData}
+interface TeachingTrajectoryData {version:number;signature:string;handModelId:string;geometryDigest:string;times:number[];directions:number[][];biases:BranchBias[][];arms:ArmTrajectoryData}
 // Increase whenever playback interpretation or authoring parameters change.
 const trajectoryRevision=95;
 export function teachingTrajectorySignature(program:TeachingMotion) {
@@ -1220,7 +1230,7 @@ export function teachingTrajectorySignature(program:TeachingMotion) {
   // trigonometric poses are deliberately excluded: Safari and V8 may differ
   // at floating-point tails without changing the choreography.
   const quantize=(value:number)=>Math.round(value*1e7)/1e7;
-  const identity={revision:trajectoryRevision,formulaId:program.formulaId,initialState:program.initialState,
+  const identity={revision:trajectoryRevision,handModelId:HAND_MODEL_ID,geometryDigest:GEOMETRY_DIGEST,formulaId:program.formulaId,initialState:program.initialState,
     steps:program.steps.map(step=>({move:step.move,group:step.group,driver:step.driver})),
     phases:program.segments.map(segment=>({step:segment.step,phase:segment.phase,duration:quantize(segment.duration),hand:segment.hand,finger:segment.finger,
       fromQuarter:Math.round(segment.angleFrom/(Math.PI/2)),toQuarter:Math.round(segment.angleTo/(Math.PI/2)),wristHands:segment.wristHands,regripHands:segment.regripHands,
@@ -1290,18 +1300,19 @@ export function exportTeachingTrajectory(program:TeachingMotion):TeachingTraject
     const inverse=new Quaternion().fromArray(reference.pose[solution.hand].rotation).invert();
     return solution.joints.slice(0,3).flatMap((point,i)=>a(v(solution.joints[i+1]).sub(v(point)).normalize().applyQuaternion(inverse)));
   }));
-  return {version:trajectoryRevision,signature:teachingTrajectorySignature(program),times:track.times,directions,biases:track.biases,arms};
+  return {version:trajectoryRevision,signature:teachingTrajectorySignature(program),handModelId:HAND_MODEL_ID,geometryDigest:GEOMETRY_DIGEST,times:track.times,directions,biases:track.biases,arms};
 }
 const trajectoryRequests=new Map<string,Promise<TeachingTrajectoryData>>();
 export async function prepareTeachingTrajectory(program:TeachingMotion):Promise<void> {
   if(branchTracks.get(program)?.arms)return;
-  const signature=teachingTrajectorySignature(program),key=`${program.formulaId}:${signature}`;
+  const signature=teachingTrajectorySignature(program),key=`${program.formulaId}:${HAND_MODEL_ID}:${GEOMETRY_DIGEST}:${signature}`;
   let request=trajectoryRequests.get(key);
   if(!request) {
     request=(async()=> {
-      const response=await fetch(`/motions/cfop/${encodeURIComponent(program.formulaId)}.json?v=${signature}`);
+      const response=await fetch(`/motions/cfop/${encodeURIComponent(program.formulaId)}.json?v=${signature}&hand=${encodeURIComponent(HAND_MODEL_ID)}`);
       if(!response.ok)throw new Error('本条指法轨迹未能加载，请刷新页面后重试');
       const data=await response.json() as TeachingTrajectoryData;
+      if(data.handModelId!==HAND_MODEL_ID||data.geometryDigest!==GEOMETRY_DIGEST)throw new Error('本条轨迹与当前教学手型不匹配，请重新加载');
       if(data.version!==trajectoryRevision||data.signature!==signature||!Array.isArray(data.times)||data.times.length<2
         ||data.times[0]!==0||Math.abs(data.times.at(-1)!-program.duration)>1e-8||!Array.isArray(data.directions)||data.directions.length!==data.times.length
         ||!Array.isArray(data.biases)||data.biases.length!==data.times.length-1||data.times.some((t,i)=>!Number.isFinite(t)||(i>0&&t<=data.times[i-1]))
@@ -1324,7 +1335,7 @@ export async function prepareTeachingTrajectory(program:TeachingMotion):Promise<
       const points=[new Vector3(sign*base[0],base[1],base[2]).applyQuaternion(q).add(v(frame.pose[hand].palm))];
       for(let link=0;link<3;link++) {
         const direction=new Vector3().fromArray(data.directions[k],index*9+link*3);
-        points.push(points.at(-1)!.clone().addScaledVector(direction.applyQuaternion(q),FINGER_LENGTHS[link]));
+        points.push(points.at(-1)!.clone().addScaledVector(direction.applyQuaternion(q),fingerLengths(finger)[link]));
       }
       return {hand,finger,joints:points.map(a) as RigidFingerSolution['joints'],reachError:0,minimumClearance:0};
     }));
@@ -1339,12 +1350,13 @@ export function teachingTrajectoryCacheInfo() {
 function trajectoryClearance(solution:RigidFingerSolution,others:RigidFingerSolution[],baseField:DistanceField,constrained=false,pose?:TeachingPose) {
   const field=pose?mountField(pose,solution,baseField):baseField;
   const points=solution.joints.map(v),obstacles=others.flatMap(s=>s.joints.slice(0,3).map((p,i)=> {
-    const a=v(p),b=v(s.joints[i+1]);return {a,b,center:a.clone().add(b).multiplyScalar(.5),radius:a.distanceTo(b)*.5};
+    const a=v(p),b=v(s.joints[i+1]);return {a,b,center:a.clone().add(b).multiplyScalar(.5),radius:a.distanceTo(b)*.5,shell:linkShell(s.finger,i).outer};
   }));
-  return Math.min(constrained?Infinity:field(points[3])-.0032,field(points[0])-.0045,field(points[1])-.0037,field(points[2])-.0037,
-    linkClearance(points[0],points[1],.0036,field),linkClearance(points[1],points[2],.0036,field),linkClearance(points[2],points[3],.0026,field),
-    segmentDistance(points[0],points[1],points[2],points[3])-.0077,
-    segmentDistance(points[1],points[2],points[3],points[3])-.0069,adjacentLinkClearance(points),otherClearance(points,obstacles));
+  const shells=[0,1,2].map(i=>linkShell(solution.finger,i).outer),joints=[0,1,2].map(i=>jointShellRadius(solution.finger,i).outer),pad=jointShellRadius(solution.finger,3).outer;
+  return Math.min(constrained?Infinity:field(points[3])-pad,field(points[0])-joints[0],field(points[1])-joints[1],field(points[2])-joints[2],
+    linkClearance(points[0],points[1],shells[0],field),linkClearance(points[1],points[2],shells[1],field),linkClearance(points[2],points[3],shells[2],field),
+    segmentDistance(points[0],points[1],points[2],points[3])-(shells[0]+shells[2]),
+    segmentDistance(points[1],points[2],points[3],points[3])-(shells[1]+pad),adjacentLinkClearance(points,solution.finger),otherClearance(points,obstacles,shells));
 }
 /** A whole-formula deterministic branch reference, never previous render state.
  * Current targets are still solved with rigid lengths and exact contact pads. */
@@ -1365,7 +1377,7 @@ function interpolateBranch(pose:TeachingPose,from:BranchReference,to:BranchRefer
     if(only!==undefined&&i!==only)return [];
     const right=to.solutions[i],hand=left.hand,finger=left.finger,h=pose[hand],sign=hand==='right'?1:-1;
     const q=new Quaternion().fromArray(h.rotation),fromInverse=new Quaternion().fromArray(from.pose[hand].rotation).invert(),toInverse=new Quaternion().fromArray(to.pose[hand].rotation).invert();
-    const base=FINGER_BASES[finger],origin=new Vector3(sign*base[0],base[1],base[2]).applyQuaternion(q).add(v(h.palm));
+    const lengths=fingerLengths(finger),base=FINGER_BASES[finger],origin=new Vector3(sign*base[0],base[1],base[2]).applyQuaternion(q).add(v(h.palm));
     const points=[origin];
     const free=!contacts.some(c=>c.hand===hand&&c.finger===finger);
     const freeDirections=free?interpolateFingerDirections(left.joints.slice(0,3).map((p,i)=>a(v(left.joints[i+1]).sub(v(p)).normalize().applyQuaternion(fromInverse))),
@@ -1387,7 +1399,7 @@ function interpolateBranch(pose:TeachingPose,from:BranchReference,to:BranchRefer
         direction.applyAxisAngle(new Vector3(1,0,0),adjust[0]*weight);
       }
       direction.applyQuaternion(q);
-      points.push(points.at(-1)!.clone().addScaledVector(direction,FINGER_LENGTHS[link]));
+      points.push(points.at(-1)!.clone().addScaledVector(direction,lengths[link]));
     }
     if(!contacts.some(c=>c.hand===hand&&c.finger===finger))
       return {hand,finger,joints:points.map(a) as RigidFingerSolution['joints'],reachError:0,minimumClearance:0};
@@ -1410,7 +1422,7 @@ function interpolateBranch(pose:TeachingPose,from:BranchReference,to:BranchRefer
       const contact=contacts.find(c=>c.hand===hand&&c.finger===finger);
       if(!contact?.positionOnly&&direction.dot(normal)<.2)direction.addScaledVector(normal,.2-direction.dot(normal)).normalize();
       constrainDistalDirection(direction,contacts.find(c=>c.hand===hand&&c.finger===finger),normal);
-      const distal=end.clone().addScaledVector(direction,FINGER_LENGTHS[2]);
+      const distal=end.clone().addScaledVector(direction,lengths[2]);
       const fromAxis=v(left.joints[2]).sub(v(left.joints[0])).applyQuaternion(fromInverse).normalize();
       const toAxis=v(right.joints[2]).sub(v(right.joints[0])).applyQuaternion(toInverse).normalize();
       const fromRadial=v(left.joints[1]).sub(v(left.joints[0])).applyQuaternion(fromInverse);
@@ -1419,14 +1431,14 @@ function interpolateBranch(pose:TeachingPose,from:BranchReference,to:BranchRefer
       toRadial.addScaledVector(toAxis,-toRadial.dot(toAxis)).normalize();
       const transportedEnd=fromRadial.clone().applyQuaternion(new Quaternion().setFromUnitVectors(fromAxis,toAxis));
       const twist=Math.atan2(toAxis.dot(transportedEnd.clone().cross(toRadial)),transportedEnd.dot(toRadial));
-      const delta=distal.clone().sub(origin),distance=Math.min(FINGER_LENGTHS[0]+FINGER_LENGTHS[1]-1e-8,Math.max(Math.abs(FINGER_LENGTHS[0]-FINGER_LENGTHS[1])+1e-8,delta.length()));
+      const delta=distal.clone().sub(origin),distance=Math.min(lengths[0]+lengths[1]-1e-8,Math.max(Math.abs(lengths[0]-lengths[1])+1e-8,delta.length()));
       const axis=delta.normalize(),localAxis=axis.clone().applyQuaternion(q.clone().invert());
       if(fromAxis.dot(localAxis)<-.9999)throw new TrajectoryBendError('指法分支需要增加转折关键帧');
       const radial=fromRadial.applyQuaternion(new Quaternion().setFromUnitVectors(fromAxis,localAxis))
         .applyAxisAngle(localAxis,twist*blend+adjust[0]*weight).applyQuaternion(q);
-      const along=(FINGER_LENGTHS[0]**2-FINGER_LENGTHS[1]**2+distance**2)/(2*distance),radius=Math.sqrt(Math.max(0,FINGER_LENGTHS[0]**2-along**2));
+      const along=(lengths[0]**2-lengths[1]**2+distance**2)/(2*distance),radius=Math.sqrt(Math.max(0,lengths[0]**2-along**2));
       const elbow=origin.clone().addScaledVector(axis,along).addScaledVector(radial,radius),target=origin.clone().addScaledVector(axis,distance);
-      const actual=target.clone().addScaledVector(direction,-FINGER_LENGTHS[2]);
+      const actual=target.clone().addScaledVector(direction,-lengths[2]);
       return {hand,finger,joints:[a(origin),a(elbow),a(target),a(actual)] as RigidFingerSolution['joints'],reachError:actual.distanceTo(end),minimumClearance:0};
     }
   });
@@ -1453,14 +1465,14 @@ export function fitTeachingFrame(frame:TeachingFrame):TeachingFrame {
       const original=v(h.palm),outward=new Vector3(sign,0,0).applyQuaternion(q);
       const blocked=(offset:number)=> {
         const center=original.clone().addScaledVector(outward,offset);
-        const box:RoundedBox={center:a(center),rotation:h.rotation,half:specification.geometry.palmSize.map(x=>x/2+.0065) as Vec3,rounding:0};
+        const box:RoundedBox={center:a(center),rotation:h.rotation,half:specification.geometry.palmSize.map(x=>x/2+.001) as Vec3,rounding:0};
         for(const shape of shapes) {
-          if(center.distanceTo(v(shape.center))>shape.boundingRadius+.043)continue;
+          if(center.distanceTo(v(shape.center))>shape.boundingRadius+.07)continue;
           if(obbPenetration(box,shape)>.00005)return true;
         }
         for(const finger of FINGER_NAMES) {
           const b=FINGER_BASES[finger],base=new Vector3(sign*b[0],b[1],b[2]).applyQuaternion(q).add(center);
-          if(field(base)<.0047)return true;
+          if(field(base)<jointShellRadius(finger,0).outer+.0004)return true;
         }
         return false;
       };
@@ -1479,19 +1491,20 @@ export function fitTeachingFrame(frame:TeachingFrame):TeachingFrame {
     if(trajectoryConstraints(frame).some(c=>c.hand===hand&&c.finger===finger))continue;
     const h=pose[hand],q=new Quaternion().fromArray(h.rotation),sign=hand==='right'?1:-1;
     const point=v(h.tips[finger].point),local=point.clone().sub(v(h.palm)).applyQuaternion(q.clone().invert());
-    if(Math.abs(local.x)<.0112&&Math.abs(local.y)<.0337&&Math.abs(local.z)<.0247) {
+    const half=specification.geometry.palmSize,hx=half[0]/2+.002,hy=half[1]/2+.002,hz=half[2]/2+.002;
+    if(Math.abs(local.x)<hx&&Math.abs(local.y)<hy&&Math.abs(local.z)<hz) {
       // Project continuously to the nearest radial shell. Forcing every point
       // to +X teleported a fingertip by 22 mm when it entered from the -X side.
-      if(local.lengthSq()<1e-14)local.set(sign*.0113,0,0);
-      else local.multiplyScalar(Math.min(.0113/Math.max(1e-9,Math.abs(local.x)),.0338/Math.max(1e-9,Math.abs(local.y)),.0248/Math.max(1e-9,Math.abs(local.z))));
+      if(local.lengthSq()<1e-14)local.set(sign*(hx+.0002),0,0);
+      else local.multiplyScalar(Math.min((hx+.0002)/Math.max(1e-9,Math.abs(local.x)),(hy+.0002)/Math.max(1e-9,Math.abs(local.y)),(hz+.0002)/Math.max(1e-9,Math.abs(local.z))));
       point.copy(local.applyQuaternion(q).add(v(h.palm)));
     }
     for(const other of FINGER_NAMES) {
       const base=FINGER_BASES[other],origin=new Vector3(sign*base[0],base[1],base[2]).applyQuaternion(q).add(v(h.palm));
-      const delta=point.clone().sub(origin);
-      if(delta.length()<.0079) {
+      const delta=point.clone().sub(origin),need=fingerPadRadius(finger)+jointShellRadius(other,0).outer;
+      if(delta.length()<need) {
         if(delta.lengthSq()<1e-14)delta.set(sign,0,0).applyQuaternion(q);
-        point.copy(origin.add(delta.setLength(.0079)));
+        point.copy(origin.add(delta.setLength(need)));
       }
     }
     h.tips[finger].point=a(point);
@@ -1503,9 +1516,10 @@ export function fitTeachingFrame(frame:TeachingFrame):TeachingFrame {
   for(let pass=0;pass<4;pass++)for(let i=0;i<digits.length;i++)for(let j=i+1;j<digits.length;j++) {
     const first=digits[i],second=digits[j];if(first.fixed&&second.fixed)continue;
     const p=v(pose[first.hand].tips[first.finger].point),r=v(pose[second.hand].tips[second.finger].point);
-    const delta=r.clone().sub(p),distance=delta.length();if(distance>=.0084)continue;
+    const separation=fingerPadRadius(first.finger)+fingerPadRadius(second.finger);
+    const delta=r.clone().sub(p),distance=delta.length();if(distance>=separation)continue;
     if(distance<1e-8)delta.set(0,1,0);else delta.divideScalar(distance);
-    const correction=.0084-distance;
+    const correction=separation-distance;
     if(!first.fixed)p.addScaledVector(delta,-correction*(second.fixed?1:.5));
     if(!second.fixed)r.addScaledVector(delta,correction*(first.fixed?1:.5));
     pose[first.hand].tips[first.finger].point=a(p);pose[second.hand].tips[second.finger].point=a(r);

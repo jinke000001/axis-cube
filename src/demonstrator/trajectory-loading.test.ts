@@ -1,7 +1,8 @@
 import {afterEach,beforeAll,describe,expect,it,vi} from 'vitest';
 import {FORMULAS} from './catalog';
 import {compileTeachingMotion,sampleTeachingMotion,type TeachingMotion} from './motion';
-import {exportTeachingTrajectory,prepareTeachingTrajectory,teachingTrajectorySignature,fitTeachingFrame,solveTeachingPose,FINGER_LENGTHS} from './rig';
+import {exportTeachingTrajectory,prepareTeachingTrajectory,teachingTrajectorySignature,fitTeachingFrame,solveTeachingPose} from './rig';
+import {fingerLengths} from './hand-model';
 import {Vector3} from 'three';
 
 let fixtureProgram:TeachingMotion;
@@ -33,7 +34,7 @@ describe('published trajectory decoding',()=> {
     const solved=solveTeachingPose(frame.pose,frame);
     expect(solved).toHaveLength(10);
     for(const finger of solved)for(let link=0;link<3;link++) {
-      expect(new Vector3().fromArray(finger.joints[link]).distanceTo(new Vector3().fromArray(finger.joints[link+1]))).toBeCloseTo(FINGER_LENGTHS[link],9);
+      expect(new Vector3().fromArray(finger.joints[link]).distanceTo(new Vector3().fromArray(finger.joints[link+1]))).toBeCloseTo(fingerLengths(finger.finger)[link],9);
     }
     const first=JSON.stringify(solved);sampleTeachingMotion(program,program.duration);
     expect(JSON.stringify(solveTeachingPose(frame.pose,frame))).toBe(first);

@@ -3,17 +3,21 @@ import type { Vec3 } from '../core/cube';
 import type { TeachingFinger, TeachingHand } from './types';
 import { capsuleBoxClearance, inscribedBoxSlabs, segmentSegmentDistance, type RoundedBox, type Segment } from './geometry-shapes';
 import metadata from '../../art/teaching-hand/rig.json';
+import { armShell, jointShellRadius, linkShell } from './hand-model';
 
 /** Authoring is offline. Playback only evaluates the stored, unwrapped elbow
  * angle; neither path selection nor a previous rendered pose is needed. */
 export const ARM_TRAJECTORY_REVISION = 1;
 export const ARM_TRAJECTORY_PARAMETERS = {
   revision: ARM_TRAJECTORY_REVISION,
+  handModelId: metadata.handModelId,
+  geometryDigest: metadata.geometryDigest,
   shoulderRight: [.215, -.23, .04],
   lengths: metadata.armLengths,
   wristAttachment: metadata.wristAttachment,
   geometry: metadata.geometry,
   baseOffsetsRight: metadata.baseOffsetsRight,
+  fingers: metadata.fingers,
 };
 function signature(value: unknown): string {
   const text = JSON.stringify(value);
@@ -80,8 +84,6 @@ const tolerance = .0003;
 const V = (point: readonly number[]) => new Vector3().fromArray(point);
 const A = (point: Vector3) => point.toArray() as Vec3;
 const sphereFactor = Math.cos(Math.PI / dimensions.uvSphereSegments) * Math.cos(Math.PI / (2 * dimensions.uvSphereRings)) * .99;
-const housingOuterRadius = Math.hypot(dimensions.armHousingWidth / 2, dimensions.armHousingDepth / 2);
-const housingInnerRadius = Math.min(dimensions.armHousingWidth / 2, dimensions.armHousingDepth / 2) - dimensions.armHousingBevel;
 
 /** The circle of elbows satisfying both authored lengths and the exact wrist.
  * The world-lateral reference is independent of wrist roll. */
@@ -131,18 +133,17 @@ function sphere(point: Vec3, radius: number, hand: TeachingHand, name: string, i
 }
 function armCapsules(arm: ArmSolution): Capsule[] {
   const points = [arm.shoulder, arm.elbow, arm.wrist];
-  return [0, 1].map(i => housing(points[i], points[i + 1], arm.hand, i ? 'forearm' : 'upper', [i, i + 1], housingOuterRadius, housingInnerRadius, dimensions.armEndInset))
+  const shell = armShell();
+  return [0, 1].map(i => housing(points[i], points[i + 1], arm.hand, i ? 'forearm' : 'upper', [i, i + 1], shell.outer, shell.inner, shell.inset))
     .concat(points.map((point, i) => sphere(point, i === 2 ? dimensions.wristCouplerRadius : dimensions.armBearingRadius, arm.hand, i === 2 ? 'wrist' : 'bearing', i)));
 }
 function fingerCapsules(fingers: readonly ArmFingerObstacle[]): Capsule[] {
   return fingers.flatMap(finger => {
     const links = [0, 1, 2].map(i => {
-      const width = dimensions.linkWidths[i] / 2, depth = dimensions.linkDepths[i] / 2;
-      const outer = Math.hypot(width, Math.max(depth, i < 2 ? dimensions.inlayDepthOffset + dimensions.inlayDepth / 2 : 0));
-      return housing(finger.joints[i], finger.joints[i + 1], finger.hand, finger.finger + '-' + i, [i, i + 1], outer,
-        Math.max(0, Math.min(width, depth) - dimensions.linkBevel), dimensions.linkEndInset);
+      const shell = linkShell(finger.finger, i);
+      return housing(finger.joints[i], finger.joints[i + 1], finger.hand, finger.finger + '-' + i, [i, i + 1], shell.outer, shell.inner, shell.inset);
     });
-    return links.concat(finger.joints.map((point, i) => sphere(point, i === 3 ? dimensions.padRadius : dimensions.jointRadii[i], finger.hand, finger.finger, i)));
+    return links.concat(finger.joints.map((point, i) => sphere(point, jointShellRadius(finger.finger, i).outer, finger.hand, finger.finger, i)));
   });
 }
 function palmBoxes(pose: ArmPalms): PalmBox[] {
