@@ -1,0 +1,279 @@
+{
+  "schemaVersion": 1,
+  "mode": "phased",
+  "trajectoryRevision": 95,
+  "totalCases": 119,
+  "totalDemonstrations": 121,
+  "demonstrations": [
+    {
+      "id": "gan-f2l-01",
+      "sha256": "8c01bd568e5fe42d9a9acbe5965e3263d341ddcea4dd1c04aff25296f7d9395e",
+      "signature": "d0950d33"
+    },
+    {
+      "id": "gan-f2l-02",
+      "sha256": "7685a7ce1357d72f8d2b3188739074390902420a99dbb65d4a7aaf6e759f6627",
+      "signature": "a8bdf9ea"
+    },
+    {
+      "id": "gan-f2l-06",
+      "sha256": "1ce4aa69039b19dcf7ffad18ecf6a077d24cdf27d514820e1e1a9f6cef40aeaf",
+      "signature": "a62f18d3"
+    },
+    {
+      "id": "gan-f2l-09",
+      "sha256": "9a37cccbabcf6530f2bf30e93985ec0870bb8419847d437c11ef1cf3bbf532c2",
+      "signature": "8faec457"
+    },
+    {
+      "id": "gan-f2l-10",
+      "sha256": "f9187358f4fcccad035449c2b1df9a5cc38d8d76d808300724f5638fdbcfd7c2",
+      "signature": "eaa9b8b8"
+    },
+    {
+      "id": "gan-f2l-11",
+      "sha256": "82bd53b64c6b9a4842210ab2e46653980972a2bd8888d90f93df921dd4426c82",
+      "signature": "c9f9a652"
+    },
+    {
+      "id": "gan-f2l-12",
+      "sha256": "0a2cef470f27ad33d5068ff653c5e7c06c53a84bec1a988a1f36350d06424268",
+      "signature": "13ae63b0"
+    },
+    {
+      "id": "gan-f2l-14",
+      "sha256": "6a63d856630cd26bdbc705a19fa1d845c4a55f35a393b7483aac5dd3fc85f50b",
+      "signature": "ea66a959"
+    },
+    {
+      "id": "gan-f2l-15",
+      "sha256": "536760113b9db8ab459a1cb13fef52aa97fafc9db7c30012c39f592ef9216842",
+      "signature": "12c38e63"
+    },
+    {
+      "id": "gan-f2l-16",
+      "sha256": "665e768858477aa88b83e5b0a1b06946e2b12fd62e0226b8f2c4b3e4b48ca5c1",
+      "signature": "28d1343c"
+    },
+    {
+      "id": "gan-f2l-18",
+      "sha256": "d594094df1c816c987f58a4804711bcba9eecc9b00c9b1908006901586be1ad8",
+      "signature": "67cb6fb2"
+    },
+    {
+      "id": "gan-f2l-19",
+      "sha256": "dcab8aa5ea3f2d7530a81ba71bcda1c7a50b74ca77cafab95b2d2c35507374cc",
+      "signature": "bde9b50e"
+    },
+    {
+      "id": "gan-f2l-21",
+      "sha256": "ddb3c382d909c033b30c83a3be13c9f3baa33526401e69b5ceb6aa0073091db5",
+      "signature": "5189be92"
+    },
+    {
+      "id": "gan-f2l-22",
+      "sha256": "bcda0274522d4ba4f20f9f7e298ebeeb4441e87af3a272104c2c6ddfe9e7b826",
+      "signature": "e89611f0"
+    },
+    {
+      "id": "gan-f2l-24",
+      "sha256": "9de913068258c19ff70f4f8ed6086d6a6e5080c85c960c67f3c39489c8c3a785",
+      "signature": "7c0de906"
+    },
+    {
+      "id": "gan-f2l-25",
+      "sha256": "d15f7f8cfa2cb59107b359888806a65a176e96dab1540f86668c9033c37daa7f",
+      "signature": "88904482"
+    },
+    {
+      "id": "gan-f2l-28",
+      "sha256": "c37a01dba873c898d0ff5fb5ce975bffb85cd91fe2396d52f6e5d6bc4131d04b",
+      "signature": "63dbaad5"
+    },
+    {
+      "id": "gan-f2l-29",
+      "sha256": "ced24a9d77d77bb62e6341b18a6477e99a256225497d372d32d3fd9f2a90f0c9",
+      "signature": "1bca6b0f"
+    },
+    {
+      "id": "gan-f2l-30",
+      "sha256": "2a506af05363a9651e2aedd30965600a9db4cd47089ca4a40ded37e83d2f4605",
+      "signature": "952896fd"
+    },
+    {
+      "id": "gan-f2l-31",
+      "sha256": "26d76842b823c4a8cc4dbb7f15fa20285f9448659d6af9f821c1837b3271708f",
+      "signature": "3e0d3a1b"
+    },
+    {
+      "id": "gan-f2l-32",
+      "sha256": "463c405996945eb3605ba148a2c161320a5e72633d028a398ddf32329a00f1fe",
+      "signature": "a84fafa8"
+    },
+    {
+      "id": "gan-f2l-34",
+      "sha256": "bf8253cc33432002244f6e94acfba2ba52e741501d18678f697ab8bd77053438",
+      "signature": "bb742e03"
+    },
+    {
+      "id": "gan-f2l-36",
+      "sha256": "36b5073e3e811d94c33ac74fd93d00b99ca184b58aef6b4c72347e4ff45ba413",
+      "signature": "d031185c"
+    },
+    {
+      "id": "gan-f2l-37",
+      "sha256": "54367e34922c1f743822619b8df6139a8e3b8c2c1ec1af4f06fa5b326c5be63f",
+      "signature": "b9b03ed4"
+    },
+    {
+      "id": "gan-f2l-40",
+      "sha256": "4c59f1569b23d4f6ea64e2725b06bd310b9f6b09680fd7639d626d25ad11d293",
+      "signature": "dd868ee7"
+    },
+    {
+      "id": "gan-f2l-41",
+      "sha256": "53cd0416afb269b2812f8102752dd5221cf93d6ceea655030526e22d95ac0f45",
+      "signature": "b50c028b"
+    },
+    {
+      "id": "gan-oll-01",
+      "sha256": "b0ab4475812802a7e85eb813d2fdc785b138ebeb4142fd27e573f06ea03bea98",
+      "signature": "668dc542"
+    },
+    {
+      "id": "gan-oll-03",
+      "sha256": "6aa47427349605bc399f47b9b48e3d73812ef69bc4287e24f8fd3deb25c03c37",
+      "signature": "65f93ce2"
+    },
+    {
+      "id": "gan-oll-06",
+      "sha256": "9a680cedc9851eeabff929db3f6af0298513b0e9a9a99f096e92b5c1bec699a1",
+      "signature": "b9d231d9"
+    },
+    {
+      "id": "gan-oll-07",
+      "sha256": "a004ed9bcc80fcbed77f416709a22a20e5c2136e7cc9bd299d157d2825d6d43e",
+      "signature": "e027f398"
+    },
+    {
+      "id": "gan-oll-16",
+      "sha256": "d32b1e2b1ea3372757ec8101f81b1971eace50adcc0b1f790bcfa85eb5aa3796",
+      "signature": "8b063b34"
+    },
+    {
+      "id": "gan-oll-18",
+      "sha256": "947d20791aa77d71bc7f9501b677289449c6a01fa3e425a6dd7f0be573ace41a",
+      "signature": "df12b703"
+    },
+    {
+      "id": "gan-oll-21",
+      "sha256": "8854c5c387218b4155950bae25fd8b281133463718b647a098874697ca514477",
+      "signature": "1c453c9c"
+    },
+    {
+      "id": "gan-oll-24",
+      "sha256": "4a0a1e2b5730e4b36a662a9f69e84bedac1022c26f69cea8f0655f2e45efb65a",
+      "signature": "67fcb45a"
+    },
+    {
+      "id": "gan-oll-25",
+      "sha256": "9ae683636aaf464561e16f5023df3993c6f5d2fae80a7c33b021642ed5392db6",
+      "signature": "b8d525d1"
+    },
+    {
+      "id": "gan-oll-26",
+      "sha256": "16a33786bdae34adcab576b3040b5e5e9efd937223ae9ede111684cffbfd1be5",
+      "signature": "fb039f1a"
+    },
+    {
+      "id": "gan-oll-28",
+      "sha256": "bb59c033f41fa0a653e6876ae1251c737318c779bb670e5d6179c94673f3d59c",
+      "signature": "6b201107"
+    },
+    {
+      "id": "gan-oll-31",
+      "sha256": "514223135063231af71d3ca7612c427c028931b6fabc91eaf8a3747f0a0ea86c",
+      "signature": "97c446fe"
+    },
+    {
+      "id": "gan-oll-35",
+      "sha256": "f0855bc4767ae07dc010a8b6e5dd84c3b3c9990a222e34e73c7c9bb154996551",
+      "signature": "d5cc2330"
+    },
+    {
+      "id": "gan-oll-45",
+      "sha256": "1d19affc34196c72ca219a1bb76e1d6dbbba0922d77e309aa521caab289a814a",
+      "signature": "9117926b"
+    },
+    {
+      "id": "gan-oll-46",
+      "sha256": "714fb3dd6e35169a252258df2a0ac79d4d6681f0c1b1ce9a002472066d7c0125",
+      "signature": "d67a42b"
+    },
+    {
+      "id": "gan-oll-49",
+      "sha256": "405482ad302c3531cae1b62bebfc30cf0afc67c9121b2785c5633bce2b4652be",
+      "signature": "c501700"
+    },
+    {
+      "id": "gan-oll-50",
+      "sha256": "10ae532a2dc70317ad600a43e359ca2645cedbd22564d3b464f73d4409561db1",
+      "signature": "ee5a9ce3"
+    },
+    {
+      "id": "gan-oll-53",
+      "sha256": "39482fc92dee1e91725bc52b246177faf642d0f7e70594700ea0180e71f20a08",
+      "signature": "cb7fbf77"
+    },
+    {
+      "id": "gan-oll-54",
+      "sha256": "3f3ede578314160506e5b1c76704e3b860cd9efc858e689aff63ca8fcfd5db3b",
+      "signature": "52b19ed"
+    },
+    {
+      "id": "gan-oll-56",
+      "sha256": "adccc3eb2cbc1fa27cf7bba927da030120ae41c464bdaee50800ad15c2289483",
+      "signature": "17828f67"
+    },
+    {
+      "id": "gan-oll-57",
+      "sha256": "3366207125f74b07297ca9259bb64c0e03f518609245ad1292d7242288d5804c",
+      "signature": "82eb72ae"
+    },
+    {
+      "id": "gan-pll-01-alt-1",
+      "sha256": "b769d6f1bdee8c2988b5899e1479a1a3d98d70446ef35fd539baf12ff0aa1d24",
+      "signature": "fee8c8bf"
+    },
+    {
+      "id": "gan-pll-05",
+      "sha256": "63ae5f5e44314aa3b0c8c71a2944279362e014491f4d5dcac7a422e3f35c7dbb",
+      "signature": "bf7e5420"
+    },
+    {
+      "id": "gan-pll-06",
+      "sha256": "9791c5a95ce4407d47b7c6256d10b9a331de33f3237d5a5eb340c2b36d146696",
+      "signature": "77e7c210"
+    },
+    {
+      "id": "gan-pll-12",
+      "sha256": "29e8ffd09d648a7be9401e1af810c509ee92bc4994b578870c902e3b80da8f60",
+      "signature": "405d7833"
+    },
+    {
+      "id": "gan-pll-14",
+      "sha256": "93daa539d2e12b5dbbfb234f5f2a59fb25ed655242f12b1d740d9e42fbc68b29",
+      "signature": "5c5e1416"
+    },
+    {
+      "id": "gan-pll-15",
+      "sha256": "0f6daab52dcbc263402ec6e32e4d732cebbe54d7783203600094e312362fab29",
+      "signature": "6ad52170"
+    },
+    {
+      "id": "gan-pll-16",
+      "sha256": "656ee47068bf0f66b24a9cbd1db5312566f0797b4a9606a7fdf4bd549a229b17",
+      "signature": "10f24438"
+    }
+  ]
+}

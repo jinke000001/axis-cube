@@ -1,0 +1,702 @@
+/* The capture workspace owns its viewport. Review is the only scrolling page. */
+.capture-workspace {
+  width: min(880px, 96vw);
+  height: min(820px, 94svh);
+  max-height: 94svh;
+  padding: 0;
+  overflow: hidden;
+  color: #e6e8d9;
+  background: #151f19;
+  font-size: 15px;
+  line-height: 1.5;
+}
+.capture-workspace[open] {
+  display: flex;
+  flex-direction: column;
+}
+.capture-workspace * {
+  box-sizing: border-box;
+}
+.capture-workspace button,
+.capture-workspace a {
+  -webkit-tap-highlight-color: transparent;
+}
+.capture-workspace button {
+  min-height: 48px;
+  touch-action: manipulation;
+}
+.capture-workspace button:focus-visible,
+.capture-workspace a:focus-visible {
+  outline: 2px solid #ead5a7;
+  outline-offset: 2px;
+}
+.capture-workspace button:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+.capture-workspace .primary-button,
+.capture-workspace .secondary-button,
+.capture-workspace .subtle-button {
+  font-size: 14px;
+  justify-content: center;
+}
+.capture-top {
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 6px 18px;
+  border-bottom: 1px solid #334233;
+}
+.capture-top h2 {
+  font-size: 18px;
+  font-weight: 500;
+  margin: 0;
+}
+.capture-top button {
+  width: 48px;
+  padding: 10px;
+  border: 0;
+  background: transparent;
+  color: #dbe0cc;
+  display: grid;
+  place-items: center;
+}
+.capture-meter {
+  padding: 8px 20px 0;
+  flex: none;
+}
+.capture-meter-line {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  color: #b0bfa7;
+  font-size: 12px;
+}
+.capture-meter-line strong {
+  color: #ede4cc;
+  font-weight: 500;
+}
+.capture-steps {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 2px;
+}
+.capture-steps button {
+  color: #aab9a0;
+  font-size: 13px;
+  border: 0;
+  background: transparent;
+  position: relative;
+  padding: 5px 2px;
+}
+.capture-steps button::after {
+  content: "";
+  display: block;
+  height: 3px;
+  background: #334534;
+  border-radius: 3px;
+  margin: 3px 5px 0;
+}
+.capture-steps button[data-status="done"]::after {
+  background: #acc695;
+}
+.capture-steps button[data-status="adjust"]::after,
+.capture-steps button[data-status="error"]::after {
+  background: #edb277;
+}
+.capture-steps button[aria-current] {
+  color: #f0dfbb;
+}
+.capture-steps button[aria-current]::after {
+  box-shadow: 0 0 0 1px #ecd9ac;
+}
+.capture-page {
+  flex: 1;
+  min-height: 0;
+  padding: 12px 20px;
+}
+.capture-page-focus {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+.capture-direction {
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+.capture-direction p {
+  margin: 0;
+  font-size: 14px;
+}
+.capture-direction small {
+  color: #a9b89e;
+  display: block;
+  font-size: 12px;
+}
+.capture-direction button {
+  padding: 6px 8px;
+  border: 1px solid #40513d;
+  border-radius: 8px;
+  color: #d3d9c1;
+  background: #202e23;
+  font-size: 12px;
+  flex: none;
+}
+.capture-view {
+  min-height: 150px;
+  flex: 1;
+  position: relative;
+  background: #0d1510;
+  border: 1px solid #354734;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+.capture-view .live-photo {
+  position: relative;
+  flex: none;
+}
+.capture-view video {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+.capture-view .camera-grid {
+  position: absolute;
+  pointer-events: none;
+  border: 2px solid #eadab2;
+  border-radius: 8px;
+  background:
+    linear-gradient(
+      90deg,
+      transparent 32.8%,
+      #eadab270 33%,
+      #eadab270 33.5%,
+      transparent 33.7%,
+      transparent 66%,
+      #eadab270 66.2%,
+      #eadab270 66.7%,
+      transparent 67%
+    ),
+    linear-gradient(
+      transparent 32.8%,
+      #eadab270 33%,
+      #eadab270 33.5%,
+      transparent 33.7%,
+      transparent 66%,
+      #eadab270 66.2%,
+      #eadab270 66.7%,
+      transparent 67%
+    );
+}
+.capture-view-empty {
+  padding: 20px;
+  text-align: center;
+  color: #afc29e;
+}
+.capture-view-empty svg {
+  margin: 0 auto 10px;
+  color: #d7c49a;
+}
+.capture-view-empty p {
+  margin: 8px 0 0;
+  font-size: 13px;
+}
+.capture-view-empty strong {
+  display: block;
+  color: #e2e8d4;
+  font-size: 18px;
+  font-weight: 500;
+}
+.capture-workspace .capture-feedback {
+  flex: none;
+  min-height: 24px;
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.55;
+}
+.capture-workspace .capture-feedback p {
+  display: block;
+  overflow-wrap: anywhere;
+}
+.capture-workspace .capture-feedback svg {
+  display: inline-block;
+  vertical-align: middle;
+  margin-right: 6px;
+}
+.capture-workspace .capture-feedback .capture-error {
+  padding: 8px 10px;
+}
+.capture-controls {
+  flex: none;
+  padding: 12px 20px 16px;
+  border-top: 1px solid #354432;
+  background: #1c2920;
+}
+.capture-controls p {
+  margin: 6px 0 0;
+  font-size: 12px;
+  text-align: center;
+  color: #a8b89d;
+}
+.capture-controls .capture-main-action {
+  width: 100%;
+}
+.capture-controls .capture-action-reason {
+  margin: 0 0 8px;
+  text-align: left;
+  line-height: 1.45;
+}
+.capture-workspace .capture-controls .capture-verified {
+  margin: 0 0 8px;
+  padding: 8px 10px;
+  min-height: 44px;
+  line-height: 1.4;
+}
+.capture-review-net {
+  scroll-margin-top: 12px;
+}
+.capture-shutter-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 84px minmax(0, 1fr);
+  gap: 10px;
+  align-items: center;
+}
+.capture-shutter-row .subtle-button {
+  flex-direction: column;
+  gap: 4px;
+  font-size: 12px;
+  text-align: center;
+  padding: 3px;
+}
+.capture-workspace .capture-shutter {
+  width: 76px;
+  height: 76px;
+  border-radius: 50%;
+  border: 5px double #263225;
+  background: #e2cfa7;
+  color: #243021;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  font-size: 12px;
+}
+.capture-actions-pair {
+  display: grid;
+  grid-template-columns: minmax(80px, 0.38fr) minmax(0, 1fr);
+  gap: 12px;
+}
+.capture-review-page,
+.capture-entry {
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+.capture-entry {
+  display: flex;
+  flex-direction: column;
+  justify-content: safe center;
+  gap: 20px;
+  max-width: 560px;
+  width: 100%;
+  align-self: center;
+  padding: 26px;
+}
+.capture-entry h3 {
+  font-size: 26px;
+  font-weight: 500;
+  margin: 0;
+  line-height: 1.3;
+}
+.capture-entry p {
+  color: #acbba1;
+  margin: 8px 0 0;
+  font-size: 14px;
+}
+.capture-entry-actions {
+  display: grid;
+  gap: 12px;
+}
+.capture-entry-actions button {
+  width: 100%;
+  min-height: 52px;
+}
+.capture-entry-icon {
+  color: #dccba5;
+}
+.capture-import-help {
+  align-self: flex-start;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 4px 0;
+  border: 0;
+  background: transparent;
+  color: #dccba5;
+  font-size: 14px;
+  text-align: left;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+.capture-face-cards {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  margin: 12px 0;
+}
+.capture-face-card {
+  padding: 12px 8px;
+  background: #1e2c21;
+  border: 1px solid #3c4c37;
+  border-radius: 10px;
+  color: #dce5cf;
+  display: flex;
+  align-items: center;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 14px;
+}
+.capture-face-card[aria-pressed="true"] {
+  border-color: #decba3;
+}
+.capture-mini-grid {
+  width: 70px;
+  height: 70px;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  grid-template-rows: repeat(3, 1fr);
+  gap: 3px;
+  padding: 4px;
+  background: #0c140f;
+  border-radius: 5px;
+}
+.capture-mini-grid i {
+  border-radius: 2px;
+}
+.capture-mini-grid .cell-error {
+  outline: 2px solid #fff;
+  outline-offset: -2px;
+}
+.capture-face-card small {
+  font-size: 12px;
+  color: #adbf9e;
+}
+.capture-face-card .needs-attention {
+  color: #f0bf88;
+}
+.capture-review-page h3 {
+  font-size: 20px;
+  font-weight: 500;
+  margin: 4px 0;
+}
+.capture-review-page > p {
+  color: #afbea2;
+  font-size: 14px;
+  margin: 8px 0;
+}
+.capture-face-detail {
+  border: 1px solid #43513a;
+  border-radius: 10px;
+  padding: 14px;
+  margin: 14px 0;
+}
+.capture-face-detail h4 {
+  margin: 0 0 10px;
+  font-size: 16px;
+  font-weight: 500;
+}
+.capture-comparison {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 20px;
+  margin-bottom: 12px;
+}
+.capture-comparison img {
+  width: min(45%, 150px);
+  height: 120px;
+  object-fit: contain;
+  background: #101a13;
+  border-radius: 6px;
+}
+.capture-detail-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.capture-detail-actions > * {
+  flex: 1 1 120px;
+}
+.capture-face-detail p {
+  font-size: 13px;
+  color: #bbc8ad;
+  overflow-wrap: anywhere;
+}
+.capture-workspace .cube-net {
+  max-width: 340px;
+  margin: 12px auto;
+}
+/* The compact cross is a preview. Editing needs square, tappable cells instead
+   of 48px-tall buttons overflowing the cross's much smaller fixed face rows. */
+.capture-workspace .cube-net.editable {
+  width: 100%;
+  max-width: 560px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-rows: none;
+  grid-auto-rows: auto;
+  align-items: start;
+  gap: 12px;
+  padding: 0;
+}
+.capture-workspace .cube-net.editable .net-face {
+  grid-area: auto;
+  aspect-ratio: auto;
+  min-width: 0;
+  padding: 8px;
+  border: 1px solid #3e4f3c;
+  border-radius: 10px;
+  background: #202e22;
+}
+.capture-workspace .cube-net.editable .net-face.highlighted {
+  border-color: #d9dfc3;
+}
+.capture-workspace .cube-net.editable .net-label {
+  position: static;
+  display: block;
+  transform: none;
+  margin-bottom: 7px;
+  color: #d9dfc3;
+  font-size: 13px;
+  line-height: 1.4;
+}
+.capture-workspace .cube-net.editable .net-grid {
+  height: auto;
+  aspect-ratio: 1;
+  grid-template-rows: repeat(3, minmax(0, 1fr));
+  gap: 4px;
+}
+.capture-workspace .cube-net.editable .net-grid button {
+  min-height: 0;
+  width: 100%;
+  height: 100%;
+  aspect-ratio: 1;
+  border-radius: 3px;
+  font-size: 13px;
+}
+@media (max-width: 359px) {
+  .capture-workspace .cube-net.editable {
+    max-width: 260px;
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+.capture-workspace .capture-hint,
+.capture-workspace .capture-status-line {
+  font-size: 13px;
+}
+.capture-workspace .color-palette {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 10px;
+  position: sticky;
+  bottom: 0;
+  z-index: 2;
+  padding: 8px 0;
+  background: #151f19;
+  border-top: 1px solid #3e4f3c;
+}
+.capture-page:has(.cube-net.editable) {
+  scroll-padding-bottom: 76px;
+}
+.capture-workspace .color-palette button {
+  flex: 1 1 44px;
+  max-width: 48px;
+  min-width: 44px;
+  min-height: 44px;
+  height: auto;
+  aspect-ratio: 1;
+}
+.capture-workspace .capture-verified {
+  font-size: 14px;
+  padding: 12px;
+  margin: 10px 0;
+}
+.capture-workspace .capture-verified input {
+  width: 22px;
+  height: 22px;
+  flex: none;
+}
+.capture-sheet-backdrop {
+  position: absolute;
+  inset: 0;
+  z-index: 8;
+  background: #050b09bd;
+  display: flex;
+  align-items: flex-end;
+}
+.capture-sheet {
+  background: #253326;
+  border-top: 1px solid #536144;
+  width: 100%;
+  max-height: 85%;
+  overflow-y: auto;
+  padding: 18px 22px;
+  border-radius: 16px 16px 0 0;
+  display: grid;
+  gap: 10px;
+  box-shadow: 0 -16px 40px #0005;
+}
+.capture-sheet h3 {
+  font-size: 20px;
+  font-weight: 500;
+  margin: 0;
+}
+.capture-sheet p {
+  color: #c1cdb5;
+  font-size: 14px;
+  margin: 0;
+}
+.capture-sheet button {
+  width: 100%;
+}
+.capture-sheet .capture-orientation {
+  width: 140px;
+  height: 120px;
+  margin: 0 auto;
+}
+.capture-sheet .capture-orientation text {
+  fill: #eee7cf;
+  font: 14px sans-serif;
+}
+.capture-sheet ol {
+  margin: 0;
+  padding-left: 24px;
+  color: #cad3bb;
+  font-size: 14px;
+}
+.capture-draft-warning {
+  flex: none;
+  background: #442e25;
+  color: #f0c3ac;
+  padding: 8px 16px;
+  font-size: 12px;
+}
+@media (max-width: 700px) {
+  .capture-workspace {
+    width: 100%;
+    max-width: 100%;
+    height: 100svh;
+    max-height: 100svh;
+    margin: auto 0;
+    border: 0;
+    border-radius: 0;
+  }
+  .capture-top {
+    padding: 4px 12px;
+  }
+  .capture-meter {
+    padding: 6px 12px 0;
+  }
+  .capture-page {
+    padding: 8px 12px;
+  }
+  .capture-entry {
+    padding: 22px;
+  }
+  .capture-controls {
+    padding: 10px 14px max(12px, env(safe-area-inset-bottom));
+  }
+  .capture-workspace .cube-net.editable .net-grid {
+    gap: 4px;
+  }
+}
+@media (max-height: 600px) {
+  .capture-meter-line {
+    display: none;
+  }
+  .capture-page-focus {
+    gap: 5px;
+  }
+  .capture-controls {
+    padding-top: 6px;
+    padding-bottom: 6px;
+  }
+  .capture-controls p {
+    margin-top: 3px;
+  }
+  .capture-direction small {
+    display: none;
+  }
+  .capture-shutter-row .capture-shutter {
+    width: 64px;
+    height: 64px;
+  }
+}
+@media (orientation: landscape) and (max-height: 500px) {
+  .capture-workspace {
+    width: 100%;
+    height: 100svh;
+    max-height: 100svh;
+    max-width: 100%;
+    border-radius: 0;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 180px;
+    grid-template-rows: auto auto minmax(0, 1fr);
+  }
+  .capture-workspace[open] {
+    display: grid;
+  }
+  .capture-top {
+    grid-column: 1 / -1;
+  }
+  .capture-meter {
+    grid-column: 1;
+  }
+  .capture-page {
+    grid-column: 1;
+    grid-row: 3;
+  }
+  .capture-controls {
+    grid-column: 2;
+    grid-row: 2 / 4;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    border-top: 0;
+    border-left: 1px solid #354432;
+  }
+  .capture-shutter-row {
+    display: flex;
+    flex-direction: column;
+  }
+  .capture-view {
+    min-height: 100px;
+  }
+  .capture-direction small {
+    display: none;
+  }
+  .capture-actions-pair {
+    display: flex;
+    flex-direction: column-reverse;
+  }
+  .capture-entry {
+    grid-column: 1 / -1;
+    grid-row: 2 / 4;
+  }
+  .capture-workspace[data-phase="entry"] .capture-controls {
+    display: none;
+  }
+}

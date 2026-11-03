@@ -1,0 +1,10 @@
+.museum-provider { min-height: 100dvh; background: #0a1016; isolation: isolate; }
+.museum-canvas-layer { position: fixed; inset: 0; z-index: 0; pointer-events: none; overflow: hidden; background: #0a1016; }
+.museum-canvas { display: block; width: 100%; height: 100%; }
+.museum-provider > .axis-site { position: relative; z-index: 1; background: transparent; }
+.museum-fallback-note { position: relative; margin: 0; padding: 12px 24px; color: #b4c4cd; background: #131d26; font-size: 13px; }
+.lp-scene { touch-action: pan-y; }
+.lp-orbit .lp-scene { cursor: grab; touch-action: none; }
+.lp-orbit .lp-scene:active { cursor: grabbing; }
+.lp-player .lp-net-squares > button { display: flex; justify-content: center; align-items: center; aspect-ratio: 1; min-width: 0; min-height: 0; padding: 0; border-radius: 1px; border: 0; }
+.lp-player .lp-net-squares > button:hover { filter: brightness(1.16); }

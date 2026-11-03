@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>AXIS 移动能力验证</title>
+    <style>
+      body { margin: 0; padding: max(28px, env(safe-area-inset-top)) 20px 30px; background: #0e1726; color: #f4f0e7; font: 15px/1.5 system-ui; }
+      h1 { font-size: 24px; } p { color: #bfcbd8; } button { padding: 12px 18px; background: #def3e8; border: 0; border-radius: 9px; margin: 4px; font: inherit; }
+      pre { white-space: pre-wrap; overflow-wrap: anywhere; font-size: 12px; }
+    </style>
+  </head>
+  <body>
+    <h1>AXIS 移动能力验证</h1>
+    <p>这是独立测试包，不是网站交付版本。相机实拍、低内存和真实设备仍需分别验证。</p>
+    <button id="camera">检查相机</button>
+    <button id="share">检查系统分享</button>
+    <button id="rerun">重新检查</button>
+    <p><label>选择测试 JSON 文件 <input id="file" type="file" accept="application/json,.json" /></label></p>
+    <p><label>选择测试图片 <input id="photo" type="file" accept="image/*" /></label></p>
+    <pre id="report">正在检查本地资源、图形和存储…</pre>
+    <script type="module" src="./main.ts"></script>
+  </body>
+</html>

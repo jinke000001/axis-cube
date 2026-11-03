@@ -1,0 +1,11 @@
+# One fixed CFOP demonstrator. Retired tools are resolved by the app without touching saved data.
+/learn /index.html 200
+/learn/* /index.html 200
+/library /index.html 200
+/library/* /index.html 200
+/solve /index.html 200
+/studio /index.html 200
+/studio/* /index.html 200
+/help /index.html 200
+# Unknown routes and unpublished paths must keep their real HTTP 404 status.
+/* /index.html 404

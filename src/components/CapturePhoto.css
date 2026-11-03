@@ -1,0 +1,174 @@
+.capture-photo-editor {
+  display: flex;
+  flex: 1 1 0;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  min-height: 0;
+}
+
+.capture-photo-workspace {
+  position: relative;
+  flex: 1 1 0;
+  min-width: 0;
+  min-height: 0;
+  touch-action: auto;
+}
+
+.capture-photo-image-layer {
+  position: absolute;
+}
+
+/* More specific than the legacy .photo-editor canvas size rules. The canvas,
+   SVG and handles share the same fitted bounds, including any letterboxing. */
+.capture-photo-editor .capture-photo-workspace canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  max-width: none;
+  object-fit: fill;
+  touch-action: auto;
+}
+
+.capture-photo-image {
+  border-radius: 3px;
+}
+
+.capture-photo-grid {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  pointer-events: none;
+}
+
+.capture-photo-grid line,
+.capture-photo-grid polygon {
+  stroke: #f0d8a5;
+  stroke-width: 1.5;
+  vector-effect: non-scaling-stroke;
+}
+
+.capture-photo-grid polygon {
+  stroke-width: 2;
+}
+
+.capture-photo-editor button.capture-photo-corner {
+  position: absolute;
+  display: grid;
+  place-items: center;
+  width: 48px;
+  height: 48px;
+  min-width: 48px;
+  min-height: 48px;
+  padding: 0;
+  margin: 0;
+  transform: translate(-50%, -50%);
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  box-shadow: none;
+  color: #17271d;
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.capture-photo-corner span {
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border: 2px solid #17271d;
+  border-radius: 50%;
+  background: #f4e7c9;
+  box-shadow:
+    0 0 0 1px #f4e7c9,
+    0 2px 6px #0008;
+  font:
+    600 13px/1 system-ui,
+    sans-serif;
+  pointer-events: none;
+}
+
+.capture-photo-editor button.capture-photo-corner:focus-visible {
+  outline: 2px solid #fff7e2;
+  outline-offset: -3px;
+}
+
+.capture-photo-editor button.capture-photo-corner:active {
+  cursor: grabbing;
+}
+
+.capture-photo-editor button.capture-photo-corner:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+
+.capture-photo-loupe {
+  position: absolute;
+  z-index: 2;
+  overflow: hidden;
+  box-sizing: border-box;
+  border: 2px solid #f4e7c9;
+  border-radius: 12px;
+  background: #101810;
+  box-shadow: 0 3px 16px #0009;
+  pointer-events: none;
+}
+
+.capture-photo-loupe > span {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  padding: 3px 0;
+  background: #101810db;
+  color: #fff5dc;
+  font:
+    500 11px/1.25 system-ui,
+    sans-serif;
+  text-align: center;
+}
+
+.capture-photo-crosshair {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 8px;
+  height: 8px;
+  transform: translate(-50%, -50%);
+  border: 1px solid #fff;
+  border-radius: 50%;
+  box-shadow: 0 0 0 1px #16261e;
+}
+
+.capture-photo-crosshair::before,
+.capture-photo-crosshair::after {
+  content: "";
+  position: absolute;
+  top: 3px;
+  left: -9px;
+  width: 24px;
+  height: 1px;
+  background: #fff;
+  box-shadow: 0 0 0 1px #16261e;
+}
+
+.capture-photo-crosshair::after {
+  transform: rotate(90deg);
+}
+
+.capture-photo-editor p.capture-photo-instructions {
+  flex: 0 0 auto;
+  margin: 0;
+  padding: 2px 12px 8px;
+  color: #c0c9af;
+  font-size: 12px;
+  line-height: 1.5;
+  text-align: center;
+}

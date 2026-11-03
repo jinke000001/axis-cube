@@ -1,27 +1,12 @@
 import {
-  ACESFilmicToneMapping,
-  AmbientLight,
-  CanvasTexture,
-  Color,
-  DirectionalLight,
-  Fog,
-  Group,
-  HemisphereLight,
-  Mesh,
-  MeshStandardMaterial,
-  PCFShadowMap,
-  PerspectiveCamera,
-  PlaneGeometry,
-  PMREMGenerator,
-  Scene,
-  SRGBColorSpace,
-  Vector3,
-  WebGLRenderer,
+  CanvasTexture, Group, Mesh, MeshStandardMaterial, PerspectiveCamera,
+  PlaneGeometry, SRGBColorSpace, Vector3, type WebGLRenderer,
 } from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
-import { RoomEnvironment } from "three/examples/jsm/environments/RoomEnvironment.js";
 import { RoundedBoxGeometry } from "three/examples/jsm/geometries/RoundedBoxGeometry.js";
-import { DexterousHand } from "./hand";
+import type { DexterousHand } from "./hand";
+import { disposeObject, getMuseumRuntime, type ExhibitRegistration } from "../museum/runtime";
+import { loadMuseumHands } from "../museum/hand-cache";
 import { MechanicalArm } from "./arm";
 import { CubeModel } from "./cube-model";
 import { MotionTrace } from "./trajectory";
@@ -50,7 +35,7 @@ export interface FrameReport {
 }
 export class Studio {
   renderer: WebGLRenderer;
-  scene = new Scene();
+  scene = new Group();
   camera = new PerspectiveCamera(37, 1, 0.01, 12);
   controls: OrbitControls;
   time = 0;
@@ -59,6 +44,8 @@ export class Studio {
   autoCamera = false;
   ready = false;
   disposed = false;
+  suspended = false;
+  reduceMotion = false;
   stopAt: number | undefined;
   private cube = new CubeModel();
   private trace = new MotionTrace();
@@ -71,42 +58,27 @@ export class Studio {
   private states = [SOLVED];
   private palette = DEFAULT_PALETTE;
   private observer: ResizeObserver;
-  private raf = 0;
-  private last = 0;
+  private registration: ExhibitRegistration;
+  private runtime = getMuseumRuntime();
   private reportTime = 0;
+  private needsRender = true;
+  private renderedTime = -1;
   private deltas: number[] = [];
   private targetPosition = new Vector3(0.4, 0.54, 1.0);
   private targetLook = new Vector3(0, 0.25, 0);
   private transitioning = true;
   private currentView: CameraView = "arms";
   private orbitPhase = 0.38;
-  private environment;
   constructor(
     private host: HTMLElement,
     private report: (value: FrameReport) => void,
     status: (ready: boolean, error?: string) => void,
     onOrbit: () => void = () => {},
   ) {
-    this.renderer = new WebGLRenderer({
-      antialias: true,
-      alpha: true,
-      powerPreference: "high-performance",
-    });
-    this.renderer.setPixelRatio(Math.min(devicePixelRatio, 1.75));
-    this.renderer.outputColorSpace = SRGBColorSpace;
-    this.renderer.toneMapping = ACESFilmicToneMapping;
-    this.renderer.toneMappingExposure = 0.82;
-    this.renderer.shadowMap.enabled = true;
-    this.renderer.shadowMap.type = PCFShadowMap;
-    host.append(this.renderer.domElement);
-    this.renderer.domElement.setAttribute(
-      "aria-label",
-      "双机械臂魔方三维场景，可拖动旋转视角",
-    );
-    this.scene.background = new Color("#101416");
-    this.scene.fog = new Fog("#101416", 1.7, 3.5);
+    this.renderer = this.runtime.renderer;
+    host.setAttribute("aria-label", "双机械臂魔方三维场景，可拖动旋转视角");
     this.camera.position.copy(this.targetPosition);
-    this.controls = new OrbitControls(this.camera, this.renderer.domElement);
+    this.controls = new OrbitControls(this.camera, host);
     this.controls.target.copy(this.targetLook);
     this.controls.enableDamping = true;
     this.controls.dampingFactor = 0.07;
@@ -114,41 +86,10 @@ export class Studio {
     this.controls.maxDistance = 3.5;
     this.controls.maxPolarAngle = Math.PI * 0.48;
     this.controls.enablePan = true;
+    this.controls.addEventListener("change", () => { this.needsRender = true; this.registration?.invalidate(); });
     this.controls.addEventListener("start", () => {
-      this.transitioning = false;
-      this.autoCamera = false;
-      onOrbit();
+      this.transitioning = false; this.autoCamera = false; onOrbit();
     });
-    const pmrem = new PMREMGenerator(this.renderer),
-      room = new RoomEnvironment();
-    this.environment = pmrem.fromScene(room, 0.04);
-    this.scene.environment = this.environment.texture;
-    this.scene.environmentIntensity = 0.45;
-    room.dispose();
-    pmrem.dispose();
-    this.scene.add(
-      new AmbientLight("#d7e1e4", 0.25),
-      new HemisphereLight("#eff3ee", "#212c32", 0.7),
-    );
-    const key = new DirectionalLight("#fff4de", 3.3);
-    key.position.set(-0.3, 1.2, 0.7);
-    key.castShadow = true;
-    key.shadow.mapSize.set(2048, 2048);
-    key.shadow.camera.left = -0.7;
-    key.shadow.camera.right = 0.7;
-    key.shadow.camera.top = 0.7;
-    key.shadow.camera.bottom = -0.7;
-    key.shadow.camera.near = 0.01;
-    key.shadow.camera.far = 3;
-    key.shadow.normalBias = 0.001;
-    key.shadow.bias = -0.00015;
-    this.scene.add(key);
-    const rim = new DirectionalLight("#a9c8da", 2.3);
-    rim.position.set(0.7, 0.7, -0.6);
-    this.scene.add(rim);
-    const fill = new DirectionalLight("#e1e1ce", 0.7);
-    fill.position.set(-0.7, 0.2, -0.1);
-    this.scene.add(fill);
     this.createStage();
     this.scene.add(
       this.cube.root,
@@ -159,42 +100,22 @@ export class Studio {
     this.observer = new ResizeObserver(() => this.resize());
     this.observer.observe(host);
     this.resize();
-    Promise.allSettled([
-      DexterousHand.load("left"),
-      DexterousHand.load("right"),
-    ])
-      .then((results) => {
-        if (this.disposed || results.some((r) => r.status === "rejected")) {
-          results.forEach((r) => {
-            if (r.status === "fulfilled") r.value.dispose();
-          });
-          if (!this.disposed) {
-            const failed = results.find((r) => r.status === "rejected");
-            status(
-              false,
-              failed?.status === "rejected"
-                ? String(failed.reason?.message ?? "手部资源加载失败")
-                : "手部资源加载失败",
-            );
-          }
-          return;
-        }
-        const [left, right] = results.map(
-          (r) => (r as PromiseFulfilledResult<DexterousHand>).value,
-        );
-        this.hands = { left, right };
-        this.scene.add(left.root, right.root);
-        this.ready = true;
-        status(true);
-      })
-      .catch((error) => status(false, error.message));
-    this.renderer.domElement.addEventListener("webglcontextlost", (event) => {
-      event.preventDefault();
-      this.playing = false;
-      status(false, "三维图形上下文已中断，请刷新重试。");
+    this.registration = this.runtime.register({
+      root: this.scene, camera: this.camera, host,
+      update: this.animate,
+      visible: () => !this.suspended,
+      pause: () => { this.playing = false; },
+      available: available => { if (!available) { this.playing = false; status(false, "三维画面暂时中断；课程图示仍可使用。"); } else if (this.ready) status(true); },
     });
-    this.raf = requestAnimationFrame(this.animate);
+    void loadMuseumHands().then(hands => {
+      if (this.disposed) return;
+      this.hands = hands;
+      hands.left.setGhost(false); hands.right.setGhost(false);
+      this.scene.add(hands.left.root, hands.right.root);
+      this.ready = true; this.needsRender = true; this.registration.invalidate(); if (this.runtime.available) status(true);
+    }).catch(error => { if (!this.disposed) status(false, error instanceof Error ? error.message : "手部资源加载失败"); });
   }
+
   private createStage() {
     const stage = new Group();
     const board = new Mesh(
@@ -270,20 +191,10 @@ export class Studio {
     marks.position.y = 0.024;
     stage.add(marks);
     this.scene.add(stage);
-    const floor = new Mesh(
-      new PlaneGeometry(200, 200),
-      new MeshStandardMaterial({
-        color: "#030606",
-        roughness: 1,
-        envMapIntensity: 0,
-      }),
-    );
-    floor.rotation.x = -Math.PI / 2;
-    floor.position.y = -0.03;
-    floor.receiveShadow = true;
-    this.scene.add(floor);
   }
+
   configure(state: string, moves: Move[] | PlaybackProgram, palette: Palette) {
+    this.needsRender = true;
     this.program = Array.isArray(moves) ? mechanicalPlayback(moves) : moves;
     this.states = snapshots(state, this.program.steps.map((step) => step.move));
     this.palette = palette;
@@ -295,6 +206,7 @@ export class Studio {
   }
   seek(time: number) {
     this.time = Math.max(0, Math.min(this.duration, time));
+    this.needsRender = true;
   }
   step(direction: number) {
     const index = this.program.sample(this.time).index;
@@ -330,18 +242,17 @@ export class Studio {
   ghost(value: boolean) {
     this.hands?.left.setGhost(value);
     this.hands?.right.setGhost(value);
+    this.needsRender = true;
   }
   showTrace(value: boolean) {
     this.trace.enabled = value;
+    this.needsRender = true;
   }
   private resize() {
+    this.needsRender = true;
     const w = this.host.clientWidth,
       h = this.host.clientHeight;
     if (!w || !h) return;
-    this.renderer.setPixelRatio(
-      Math.min(devicePixelRatio, w < 650 ? 1.4 : 1.75),
-    );
-    this.renderer.setSize(w, h);
     this.camera.aspect = w / h;
     this.camera.fov = w < 650 ? 47 : 37;
     this.camera.updateProjectionMatrix();
@@ -363,16 +274,18 @@ export class Studio {
     }
     this.transitioning = true;
   }
-  private animate = (now: number) => {
-    if (this.disposed) return;
-    const raw = this.last ? (now - this.last) / 1000 : 0;
-    const dt = Math.min(raw, 0.05);
-    this.last = now;
+  private animate = (now: number, dt: number, raw: number) => {
+    if (this.disposed || this.suspended) return;
     const boundary = this.stopAt ?? this.duration;
     if (this.playing && this.ready && !document.hidden)
       this.time = Math.min(boundary, this.time + dt * this.speed);
     const stoppedAtBoundary = this.playing && this.time >= boundary;
     if (stoppedAtBoundary) this.playing = false;
+    // Orbit damping can still move the camera while playback is paused.
+    this.controls.update();
+    if (!this.needsRender && !this.playing && !this.transitioning && !this.autoCamera && this.renderedTime === this.time) {
+      return;
+    }
     const frame = this.program.sample(this.time);
     const state = this.states[Math.min(frame.index, this.states.length - 1)];
     this.cube.update(
@@ -388,13 +301,13 @@ export class Studio {
     }
     this.trace.update(this.program, frame);
     if (this.transitioning) {
-      const a = 1 - Math.exp(-dt * 5);
+      const a = this.reduceMotion || this.runtime.reduceMotion ? 1 : 1 - Math.exp(-dt * 8);
       this.camera.position.lerp(this.targetPosition, a);
       this.controls.target.lerp(this.targetLook, a);
       if (this.camera.position.distanceTo(this.targetPosition) < 0.001)
         this.transitioning = false;
     }
-    if (this.autoCamera && !this.transitioning) {
+    if (this.autoCamera && !this.transitioning && !this.reduceMotion && !this.runtime.reduceMotion) {
       this.orbitPhase += dt * 0.1;
       const radius = Math.max(
           1.08,
@@ -413,12 +326,12 @@ export class Studio {
       this.controls.target.lerp(new Vector3(0, 0.29, 0), a);
     }
     this.controls.update();
-    this.renderer.render(this.scene, this.camera);
+    this.registration.invalidate();
     if (raw > 0) {
       this.deltas.push(raw);
       if (this.deltas.length > 90) this.deltas.shift();
     }
-    if (now - this.reportTime > 90) {
+    if (now - this.reportTime > 90 || stoppedAtBoundary || (!this.playing && (this.needsRender || this.renderedTime !== this.time))) {
       this.reportTime = now;
       this.report({
         time: this.time,
@@ -431,28 +344,19 @@ export class Studio {
         stoppedAtBoundary: !this.playing && this.time === boundary,
       });
     }
-    this.raf = requestAnimationFrame(this.animate);
+    this.needsRender = false;
+    this.renderedTime = this.time;
   };
   dispose() {
-    this.disposed = true;
-    cancelAnimationFrame(this.raf);
-    this.observer.disconnect();
-    this.controls.dispose();
-    this.trace.dispose();
-    this.environment.dispose();
-    this.scene.traverse((node) => {
-      if (node instanceof Mesh) {
-        node.geometry.dispose();
-        const materials = Array.isArray(node.material)
-          ? node.material
-          : [node.material];
-        materials.forEach((m) => {
-          if (m instanceof MeshStandardMaterial) m.map?.dispose();
-          m.dispose();
-        });
-      }
-    });
-    this.renderer.dispose();
-    this.renderer.domElement.remove();
+    if (this.disposed) return;
+    this.disposed = true; this.playing = false;
+    this.registration.dispose(); this.observer.disconnect(); this.controls.dispose();
+    // Cached hands belong to the museum, not to a particular route/station.
+    for (const hand of [this.hands?.left, this.hands?.right]) {
+      if (hand?.root.parent === this.scene) hand.root.removeFromParent();
+    }
+    this.cube.dispose(); this.cube.root.removeFromParent();
+    this.trace.dispose(); this.trace.root.removeFromParent();
+    disposeObject(this.scene);
   }
 }

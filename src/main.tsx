@@ -1,7 +1,6 @@
 import { createRoot } from "react-dom/client";
 import { Component, type PropsWithChildren } from "react";
-import App from "./App";
-import "./style.css";
+import DemonstratorApp from "./demonstrator/DemonstratorApp";
 class RecoveryBoundary extends Component<
   PropsWithChildren,
   { failed: boolean }
@@ -14,13 +13,12 @@ class RecoveryBoundary extends Component<
     return this.state.failed ? (
       <main className="recovery-screen">
         <div className="eyebrow">AXIS / RECOVERY</div>
-        <h1>工作台需要重新加载</h1>
+        <h1>页面需要重新加载</h1>
         <p>
-          已保存的局面与录入草稿仍留在此浏览器。请重新加载；若仍无法显示三维场景，请在支持
-          WebGL 的浏览器中打开。
+          已保存的学习进度、魔方局面与录入草稿仍留在这台设备。请重新加载后继续。
         </p>
         <button className="primary-button" onClick={() => location.reload()}>
-          重新加载工作台
+          重新加载页面
         </button>
       </main>
     ) : (
@@ -30,6 +28,6 @@ class RecoveryBoundary extends Component<
 }
 createRoot(document.getElementById("root")!).render(
   <RecoveryBoundary>
-    <App />
+    <DemonstratorApp />
   </RecoveryBoundary>,
 );

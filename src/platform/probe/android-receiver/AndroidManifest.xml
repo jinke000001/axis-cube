@@ -1,0 +1,12 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android" package="app.axis.capabilityreceiver" android:versionCode="1" android:versionName="1.0">
+  <uses-sdk android:minSdkVersion="29" android:targetSdkVersion="36" />
+  <application android:label="AXIS Local Receiver" android:theme="@android:style/Theme.Material.Light.NoActionBar" android:allowBackup="false">
+    <activity android:name=".ReceiverActivity" android:exported="true">
+      <intent-filter>
+        <action android:name="android.intent.action.SEND" />
+        <category android:name="android.intent.category.DEFAULT" />
+        <data android:mimeType="*/*" />
+      </intent-filter>
+    </activity>
+  </application>
+</manifest>

@@ -1,0 +1,289 @@
+{
+  "gan-f2l-01": {
+    "category": "角棱均在槽内",
+    "cornerLocation": "右前下层",
+    "edgeLocation": "右前中层",
+    "whiteFace": "下",
+    "edgeBlueFace": "右"
+  },
+  "gan-f2l-02": {
+    "category": "角块在槽内",
+    "cornerLocation": "右前下层",
+    "edgeLocation": "前上层",
+    "whiteFace": "下",
+    "edgeBlueFace": "前"
+  },
+  "gan-f2l-03": {
+    "category": "角块在槽内",
+    "cornerLocation": "右前下层",
+    "edgeLocation": "右上层",
+    "whiteFace": "下",
+    "edgeBlueFace": "上"
+  },
+  "gan-f2l-04": {
+    "category": "角棱均在槽内",
+    "cornerLocation": "右前下层",
+    "edgeLocation": "右前中层",
+    "whiteFace": "前",
+    "edgeBlueFace": "前"
+  },
+  "gan-f2l-05": {
+    "category": "角棱均在槽内",
+    "cornerLocation": "右前下层",
+    "edgeLocation": "右前中层",
+    "whiteFace": "前",
+    "edgeBlueFace": "右"
+  },
+  "gan-f2l-06": {
+    "category": "角块在槽内",
+    "cornerLocation": "右前下层",
+    "edgeLocation": "前上层",
+    "whiteFace": "前",
+    "edgeBlueFace": "前"
+  },
+  "gan-f2l-07": {
+    "category": "角块在槽内",
+    "cornerLocation": "右前下层",
+    "edgeLocation": "右上层",
+    "whiteFace": "前",
+    "edgeBlueFace": "上"
+  },
+  "gan-f2l-08": {
+    "category": "角棱均在槽内",
+    "cornerLocation": "右前下层",
+    "edgeLocation": "右前中层",
+    "whiteFace": "右",
+    "edgeBlueFace": "前"
+  },
+  "gan-f2l-09": {
+    "category": "角棱均在槽内",
+    "cornerLocation": "右前下层",
+    "edgeLocation": "右前中层",
+    "whiteFace": "右",
+    "edgeBlueFace": "右"
+  },
+  "gan-f2l-10": {
+    "category": "角块在槽内",
+    "cornerLocation": "右前下层",
+    "edgeLocation": "前上层",
+    "whiteFace": "右",
+    "edgeBlueFace": "前"
+  },
+  "gan-f2l-11": {
+    "category": "角块在槽内",
+    "cornerLocation": "右前下层",
+    "edgeLocation": "右上层",
+    "whiteFace": "右",
+    "edgeBlueFace": "上"
+  },
+  "gan-f2l-12": {
+    "category": "棱块在槽内",
+    "cornerLocation": "右前上层",
+    "edgeLocation": "右前中层",
+    "whiteFace": "上",
+    "edgeBlueFace": "前"
+  },
+  "gan-f2l-13": {
+    "category": "棱块在槽内",
+    "cornerLocation": "右前上层",
+    "edgeLocation": "右前中层",
+    "whiteFace": "上",
+    "edgeBlueFace": "右"
+  },
+  "gan-f2l-14": {
+    "category": "白色朝上",
+    "cornerLocation": "右前上层",
+    "edgeLocation": "前上层",
+    "whiteFace": "上",
+    "edgeBlueFace": "前"
+  },
+  "gan-f2l-15": {
+    "category": "白色朝上",
+    "cornerLocation": "右前上层",
+    "edgeLocation": "左上层",
+    "whiteFace": "上",
+    "edgeBlueFace": "左"
+  },
+  "gan-f2l-16": {
+    "category": "白色朝上",
+    "cornerLocation": "右前上层",
+    "edgeLocation": "后上层",
+    "whiteFace": "上",
+    "edgeBlueFace": "后"
+  },
+  "gan-f2l-17": {
+    "category": "白色朝上",
+    "cornerLocation": "右前上层",
+    "edgeLocation": "右上层",
+    "whiteFace": "上",
+    "edgeBlueFace": "右"
+  },
+  "gan-f2l-18": {
+    "category": "白色朝上",
+    "cornerLocation": "右前上层",
+    "edgeLocation": "前上层",
+    "whiteFace": "上",
+    "edgeBlueFace": "上"
+  },
+  "gan-f2l-19": {
+    "category": "白色朝上",
+    "cornerLocation": "右前上层",
+    "edgeLocation": "左上层",
+    "whiteFace": "上",
+    "edgeBlueFace": "上"
+  },
+  "gan-f2l-20": {
+    "category": "白色朝上",
+    "cornerLocation": "右前上层",
+    "edgeLocation": "后上层",
+    "whiteFace": "上",
+    "edgeBlueFace": "上"
+  },
+  "gan-f2l-21": {
+    "category": "白色朝上",
+    "cornerLocation": "右前上层",
+    "edgeLocation": "右上层",
+    "whiteFace": "上",
+    "edgeBlueFace": "上"
+  },
+  "gan-f2l-22": {
+    "category": "棱块在槽内",
+    "cornerLocation": "右前上层",
+    "edgeLocation": "右前中层",
+    "whiteFace": "前",
+    "edgeBlueFace": "前"
+  },
+  "gan-f2l-23": {
+    "category": "棱块在槽内",
+    "cornerLocation": "右前上层",
+    "edgeLocation": "右前中层",
+    "whiteFace": "前",
+    "edgeBlueFace": "右"
+  },
+  "gan-f2l-24": {
+    "category": "白色朝侧",
+    "cornerLocation": "右前上层",
+    "edgeLocation": "前上层",
+    "whiteFace": "前",
+    "edgeBlueFace": "前"
+  },
+  "gan-f2l-25": {
+    "category": "白色朝侧",
+    "cornerLocation": "右前上层",
+    "edgeLocation": "左上层",
+    "whiteFace": "前",
+    "edgeBlueFace": "左"
+  },
+  "gan-f2l-26": {
+    "category": "白色朝侧",
+    "cornerLocation": "右前上层",
+    "edgeLocation": "后上层",
+    "whiteFace": "前",
+    "edgeBlueFace": "后"
+  },
+  "gan-f2l-27": {
+    "category": "白色朝侧",
+    "cornerLocation": "右前上层",
+    "edgeLocation": "右上层",
+    "whiteFace": "前",
+    "edgeBlueFace": "右"
+  },
+  "gan-f2l-28": {
+    "category": "白色朝侧",
+    "cornerLocation": "右前上层",
+    "edgeLocation": "前上层",
+    "whiteFace": "前",
+    "edgeBlueFace": "上"
+  },
+  "gan-f2l-29": {
+    "category": "白色朝侧",
+    "cornerLocation": "右前上层",
+    "edgeLocation": "左上层",
+    "whiteFace": "前",
+    "edgeBlueFace": "上"
+  },
+  "gan-f2l-30": {
+    "category": "白色朝侧",
+    "cornerLocation": "右前上层",
+    "edgeLocation": "后上层",
+    "whiteFace": "前",
+    "edgeBlueFace": "上"
+  },
+  "gan-f2l-31": {
+    "category": "白色朝侧",
+    "cornerLocation": "右前上层",
+    "edgeLocation": "右上层",
+    "whiteFace": "前",
+    "edgeBlueFace": "上"
+  },
+  "gan-f2l-32": {
+    "category": "棱块在槽内",
+    "cornerLocation": "右前上层",
+    "edgeLocation": "右前中层",
+    "whiteFace": "右",
+    "edgeBlueFace": "前"
+  },
+  "gan-f2l-33": {
+    "category": "棱块在槽内",
+    "cornerLocation": "右前上层",
+    "edgeLocation": "右前中层",
+    "whiteFace": "右",
+    "edgeBlueFace": "右"
+  },
+  "gan-f2l-34": {
+    "category": "白色朝侧",
+    "cornerLocation": "右前上层",
+    "edgeLocation": "前上层",
+    "whiteFace": "右",
+    "edgeBlueFace": "前"
+  },
+  "gan-f2l-35": {
+    "category": "白色朝侧",
+    "cornerLocation": "右前上层",
+    "edgeLocation": "左上层",
+    "whiteFace": "右",
+    "edgeBlueFace": "左"
+  },
+  "gan-f2l-36": {
+    "category": "白色朝侧",
+    "cornerLocation": "右前上层",
+    "edgeLocation": "后上层",
+    "whiteFace": "右",
+    "edgeBlueFace": "后"
+  },
+  "gan-f2l-37": {
+    "category": "白色朝侧",
+    "cornerLocation": "右前上层",
+    "edgeLocation": "右上层",
+    "whiteFace": "右",
+    "edgeBlueFace": "右"
+  },
+  "gan-f2l-38": {
+    "category": "白色朝侧",
+    "cornerLocation": "右前上层",
+    "edgeLocation": "前上层",
+    "whiteFace": "右",
+    "edgeBlueFace": "上"
+  },
+  "gan-f2l-39": {
+    "category": "白色朝侧",
+    "cornerLocation": "右前上层",
+    "edgeLocation": "左上层",
+    "whiteFace": "右",
+    "edgeBlueFace": "上"
+  },
+  "gan-f2l-40": {
+    "category": "白色朝侧",
+    "cornerLocation": "右前上层",
+    "edgeLocation": "后上层",
+    "whiteFace": "右",
+    "edgeBlueFace": "上"
+  },
+  "gan-f2l-41": {
+    "category": "白色朝侧",
+    "cornerLocation": "右前上层",
+    "edgeLocation": "右上层",
+    "whiteFace": "右",
+    "edgeBlueFace": "上"
+  }
+}

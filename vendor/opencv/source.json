@@ -1,0 +1,25 @@
+{
+  "version": "4.13.0",
+  "archiveUrl": "https://github.com/opencv/opencv/releases/download/4.13.0/opencv-4.13.0-docs.zip",
+  "archiveSha256": "b3da8052bf96dfb3ebcb2d6f51f3eda41ad20799a385bff052466563bdce04cb",
+  "archivePath": "js/bin/opencv.js",
+  "upstreamSha256": "63366510248adf3a7eddf3e793dd825404efb7df3749f4d6f8557c7fa4ca8aa0",
+  "shippedSha256": "e6c3d2f227e51db10f00532d86881940cb74cff3cf1aac3f59feff2292a004da",
+  "embeddedWasmSha256": "bb2dbf0cd083a532a44c7d577253945ed95bedb8c8dd27deefb2debeb5bc9ad6",
+  "upstreamBytes": 10964323,
+  "shippedBytes": 10962269,
+  "gzipBytes": 3541918,
+  "license": "Apache-2.0",
+  "licenseUrl": "https://raw.githubusercontent.com/opencv/opencv/4.13.0/LICENSE",
+  "documentation": [
+    "https://docs.opencv.org/4.x/d0/d84/tutorial_js_usage.html",
+    "https://docs.opencv.org/4.x/d4/da1/tutorial_js_setup.html"
+  ],
+  "thirdPartyLicenseSources": {
+    "protobuf.txt": "https://raw.githubusercontent.com/opencv/opencv/4.13.0/3rdparty/protobuf/LICENSE",
+    "zlib.txt": "https://raw.githubusercontent.com/opencv/opencv/4.13.0/3rdparty/zlib/README",
+    "flatbuffers.txt": "https://raw.githubusercontent.com/opencv/opencv/4.13.0/3rdparty/flatbuffers/LICENSE.txt",
+    "flann.txt": "https://raw.githubusercontent.com/opencv/opencv/4.13.0/modules/flann/include/opencv2/flann/defines.h (initial copyright/license header)",
+    "emscripten.txt": "https://raw.githubusercontent.com/emscripten-core/emscripten/1.39.11/LICENSE (license notice only; not a claim of the compiler version)"
+  }
+}

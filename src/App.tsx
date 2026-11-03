@@ -12,6 +12,7 @@ import {
   RotateCcw,
   Route,
   ScanLine,
+  Share2,
   Shuffle,
   SkipBack,
   SkipForward,
@@ -54,12 +55,7 @@ import { CubeNet } from "./components/CubeNet";
 import { Capture } from "./components/Capture";
 import { FingerStudies } from "./components/FingerStudies";
 import { ALL_FINGER_STUDIES, studySession, type FingerStudy } from "./core/finger-studies";
-const initial = loadSession();
-const initialMode: PresentationMode = (() => {
-  try { return initial?.competition && localStorage.getItem("axis.presentation.v1") === "competitive" ? "competitive" : "cfop"; }
-  catch { return "cfop"; }
-})();
-const initialFollow = readFollow(initial, initialMode);
+import { isNativeApp } from "./platform/runtime";
 const seeded = applyAlgorithm(SOLVED, "R U2 F' L D B2 R' F2 U L2 D' B R2 U' F");
 const CFOP_LABELS: Record<CFOPPhaseName, [string,string]> = {
   cross: ["十字", "底层十字"], f2l: ["F2L", "前两层配对"],
@@ -112,18 +108,25 @@ function describeHandRoles(frame?: MotionFrame, rotation=false): Record<Side, st
           : "预备";
   return roles;
 }
-export default function App() {
+export default function App({ entry = "studio", studyId, onHome }: { entry?: "studio" | "capture"; studyId?: string; onHome?: () => void } = {}) {
+  const [initial] = useState(loadSession);
+  const [initialMode] = useState<PresentationMode>(() => {
+    try { return initial?.competition && localStorage.getItem("axis.presentation.v1") === "competitive" ? "competitive" : "cfop"; }
+    catch { return "cfop"; }
+  });
+  const [initialFollow] = useState(() => readFollow(initial, initialMode));
+  const [solver] = useState(() => ({ current: new Solver() }));
   const mount = useRef<HTMLDivElement>(null),
-    engine = useRef<Studio | null>(null),
-    solver = useRef(new Solver());
+    engine = useRef<Studio | null>(null);
   const [savedSession, setSession] = useState<Session | null>(initial),
     [ready, setReady] = useState(false),
     [sceneError, setSceneError] = useState(""),
     [report, setReport] = useState<FrameReport | null>(null);
+  const [fallbackStep, setFallbackStep] = useState(initialFollow.completed);
   const [playing, setPlaying] = useState(false),
     [pace, setPace] = useState<"race" | "slow" | "study">("race"),
     [view, setView] = useState<CameraView>("arms"),
-    [capture, setCapture] = useState(false),
+    [capture, setCapture] = useState(entry === "capture"),
     [busy, setBusy] = useState(!initial),
     [error, setError] = useState(""),
     [notice, setNotice] = useState("");
@@ -137,6 +140,7 @@ export default function App() {
   const [study, setStudy] = useState<FingerStudy | null>(null),
     [showStudies, setShowStudies] = useState(false);
   const [mode, setMode] = useState<PresentationMode>(initialMode);
+  const [sharing, setSharing] = useState(false);
   const modePlayback = useRef<Record<PresentationMode, number>>({ cfop: 0, competitive: 0 });
   const pendingAction = useRef<"solve" | "competition">("solve");
   const session = useMemo(() => study ? studySession(study) : savedSession, [study, savedSession]);
@@ -156,8 +160,8 @@ export default function App() {
     moves=useMemo(()=>program.steps.map((step)=>step.move),[program]),
     steps = program.steps,
     duration = program.duration,
-    time = report?.time ?? 0,
-    index = report?.frame.index ?? 0;
+    time = report?.time ?? (steps[fallbackStep]?.start ?? (fallbackStep ? duration : 0)),
+    index = report?.frame.index ?? Math.min(fallbackStep, moves.length);
   const speed = pace === "race" ? 1 : pace === "slow" ? 0.25 : 0.1;
   const handRoles = describeHandRoles(report?.frame,moves[index]?.kind==='rotation');
   const current = moves[index],
@@ -176,8 +180,22 @@ export default function App() {
   },[session,compiled.issue,study,competitiveView]);
   const currentPhase = phases?.find((phase) => index >= phase.start && index < phase.end) ?? phases?.at(-1);
   const activeError=error||compiled.issue;
+  const openedStudy = useRef(false);
   useEffect(() => {
-    const studio = new Studio(
+    if (!ready || busy || openedStudy.current || !studyId) return;
+    const target = ALL_FINGER_STUDIES.find(item => item.id === studyId);
+    openedStudy.current = true;
+    if (target) previewStudy(target);
+  }, [ready, busy, studyId]);
+  useEffect(() => {
+    const pause = () => { setPlaying(false); if (engine.current) engine.current.playing = false; };
+    window.addEventListener("axis:app-pause", pause);
+    return () => window.removeEventListener("axis:app-pause", pause);
+  }, []);
+  useEffect(() => {
+    let studio: Studio | undefined;
+    try {
+    studio = new Studio(
       mount.current!,
       (r) => {
         setReport(r);
@@ -201,12 +219,29 @@ export default function App() {
           initialFollow.completed
         ]?.start ?? studio.duration,
       );
+    } catch {
+      studio?.dispose();
+      engine.current = null;
+      setReady(false);
+      setPlaying(false);
+      setSceneError("三维画面暂不可用。六面展开图、逐步查看、颜色录入和局面保存仍可使用。");
+    }
     return () => {
-      studio.dispose();
+      request.current++;
+      importRequest.current++;
+      studio?.dispose();
       engine.current = null;
       solver.current.cancel();
     };
   }, []);
+  function seekPlayback(value: number) {
+    if (engine.current) { engine.current.seek(value); return; }
+    setFallbackStep(value >= duration ? moves.length : Math.max(0, steps.findIndex((_, i) => i === steps.length - 1 || value < steps[i + 1].start)));
+  }
+  function stepPlayback(direction: number) {
+    if (engine.current) { engine.current.step(direction); return; }
+    setFallbackStep(Math.max(0, Math.min(moves.length, index + direction)));
+  }
   function rememberMode(next: PresentationMode) {
     setMode(next);
     try { localStorage.setItem("axis.presentation.v1",next); } catch { /* Session export remains available. */ }
@@ -217,6 +252,7 @@ export default function App() {
     if (study) restoreStudyPresentation();
     setStudy(null);
     setSession(next);
+    setFallbackStep(0);
     rememberMode(nextMode);
     modePlayback.current = { cfop: 0, competitive: 0 };
     engine.current?.configure(
@@ -295,7 +331,7 @@ export default function App() {
       rememberMode(nextMode);
       setFollow(progress.enabled); setConfirmed(progress.completed);
       engine.current?.configure(next.facelets,nextProgram,next.palette);
-      engine.current?.seek(progress.enabled ? nextProgram.steps[progress.completed]?.start ?? nextProgram.duration :
+      seekPlayback(progress.enabled ? nextProgram.steps[progress.completed]?.start ?? nextProgram.duration :
         Math.min(modePlayback.current[nextMode],nextProgram.duration));
     } catch (error) {
       if (token === request.current) setError(error instanceof Error ? error.message : "竞速编排失败");
@@ -348,11 +384,11 @@ export default function App() {
         togglePlay();
       } else if (event.code === "ArrowRight") {
         event.preventDefault();
-        engine.current?.step(1);
+        stepPlayback(1);
         setPlaying(false);
       } else if (event.code === "ArrowLeft") {
         event.preventDefault();
-        engine.current?.step(-1);
+        stepPlayback(-1);
         setPlaying(false);
       }
     };
@@ -367,9 +403,9 @@ export default function App() {
       confirmed < moves.length &&
       (index !== confirmed || time >= (steps[confirmed + 1]?.start ?? duration))
     ) {
-      engine.current?.seek(steps[confirmed].start);
+      seekPlayback(steps[confirmed].start);
     } else if (!playing && complete) {
-      engine.current?.seek(0);
+      seekPlayback(0);
     }
     setPlaying((p) => !p);
   }
@@ -406,7 +442,7 @@ export default function App() {
     if (savedSession) {
       const restored=readableSessionProgram(mode === "competitive" && savedSession.competition ? savedSession.competition.execution.algorithm : savedSession.solution,false,mode === "competitive");
       engine.current?.configure(savedSession.facelets, restored.program, savedSession.palette);
-      engine.current?.seek(Math.min(returnPlayback.current.time,restored.program.duration));
+      seekPlayback(Math.min(returnPlayback.current.time,restored.program.duration));
     }
   }
   function closeCapture() {
@@ -437,10 +473,24 @@ export default function App() {
           : "文件读取失败";
     }
   }
+  async function saveCubeFile() {
+    if (!session || study || sharing) return;
+    if (!isNativeApp()) { exportSession(session); return; }
+    const exported = session, token = request.current;
+    setSharing(true); setPlaying(false);
+    if (engine.current) engine.current.playing = false;
+    try {
+      const { shareSessionFile } = await import("./platform/share");
+      const outcome = await shareSessionFile(`axis-cube-${exported.createdAt.slice(0, 10)}.json`, JSON.stringify(exported, null, 2));
+      if (mount.current && token === request.current) setNotice(outcome === "cancelled" ? "已取消分享，局面仍保留在本机。" : "已交给系统分享，请在所选位置确认保存结果。");
+    } catch {
+      if (mount.current && token === request.current) setNotice("暂时无法完成系统分享，请稍后重试。当前局面仍保留在本机。");
+    } finally { if (mount.current) setSharing(false); }
+  }
   return (
     <div className="app-shell">
       <header className="app-header">
-        <a className="brand" href="/" aria-label="AXIS 首页">
+        <a className="brand" href="/" aria-label="AXIS 首页" onClick={event => { if (onHome && !event.metaKey && !event.ctrlKey && !event.shiftKey && event.button === 0) { event.preventDefault(); onHome(); } }}>
           <span className="brand-mark">
             <i />
             <i />
@@ -450,7 +500,7 @@ export default function App() {
             AXIS<span> / STUDIO</span>
           </strong>
         </a>
-        <nav aria-label="主导航">
+        <nav aria-label="工作台工具">
           <button className={!study ? "nav-active" : ""} onClick={leaveStudy}>
             工作台<span>01</span>
           </button>
@@ -485,8 +535,8 @@ export default function App() {
           <div className="scene-host" ref={mount} />
           <div className="scene-heading">
             <div className="eyebrow">DEXTERITY STUDY / 001</div>
-            <h1>
-              双臂魔方<span>Dual-arm cube</span>
+            <h1 tabIndex={-1}>
+              机械工作台<span>Motion atelier</span>
             </h1>
             <p>解构每一次转动。</p>
           </div>
@@ -584,8 +634,9 @@ export default function App() {
             <div className="scene-loading" role="status">
               {sceneError ? (
                 <>
-                  <strong>模型未能加载</strong>
+                  <strong>三维演示暂不可用</strong>
                   <p>{sceneError}</p>
+                  <CubeNet state={displayState} palette={session?.palette}/>
                   <button onClick={() => location.reload()}>重新加载</button>
                 </>
               ) : (
@@ -682,8 +733,8 @@ export default function App() {
                 aria-label={`查看${CFOP_LABELS[phase.name][1]}阶段`}
                 aria-current={currentPhase?.name === phase.name ? "step" : undefined}
                 title={phase.start === phase.end ? "此阶段无需转动" : `${CFOP_LABELS[phase.name][1]} · 第${phase.start + 1}–${phase.end}步`}
-                disabled={busy || !ready || phase.start === phase.end}
-                onClick={() => { engine.current?.seek(steps[phase.start]?.start ?? duration); setPlaying(false); }}
+                disabled={busy || (!ready && !sceneError) || phase.start === phase.end}
+                onClick={() => { seekPlayback(steps[phase.start]?.start ?? duration); setPlaying(false); }}
               ><span>{CFOP_LABELS[phase.name][0]}</span><small>{phase.end - phase.start} 步</small></button>)}
             </nav>}
             <div className="section-title">
@@ -699,7 +750,7 @@ export default function App() {
                   aria-current={i === index ? "step" : undefined}
                   title={`${m.notation} · ${steps[i]?.active === "left" ? "左手" : "右手"}转层`}
                   onClick={() => {
-                    engine.current?.seek(steps[i].start);
+                    seekPlayback(steps[i].start);
                     setPlaying(false);
                   }}
                 >
@@ -712,11 +763,12 @@ export default function App() {
             <span>{session?.name ?? "正在准备局面"}</span>
             <button
               className="icon-button"
-              aria-label="下载当前局面"
-              disabled={!savedSession || !!study}
-              onClick={() => session && exportSession(session)}
+              aria-label={isNativeApp() ? "分享当前局面" : "下载当前局面"}
+              title={isNativeApp() ? "分享或保存局面文件" : "下载局面文件"}
+              disabled={!savedSession || !!study || sharing}
+              onClick={() => void saveCubeFile()}
             >
-              <Download size={16} />
+              {isNativeApp() ? <Share2 size={16}/> : <Download size={16} />}
             </button>
           </div>
         </aside>
@@ -768,7 +820,7 @@ export default function App() {
               } as React.CSSProperties
             }
             onChange={(e) => {
-              engine.current?.seek(Number(e.target.value));
+              seekPlayback(Number(e.target.value));
               setPlaying(false);
             }}
           />
@@ -780,8 +832,8 @@ export default function App() {
               className="icon-button"
               aria-label="从头重播"
               onClick={() => {
-                engine.current?.seek(0);
-                setPlaying(!follow);
+                seekPlayback(0);
+                setPlaying(ready && !follow);
               }}
               disabled={busy || !session}
             >
@@ -791,7 +843,7 @@ export default function App() {
               className="icon-button"
               aria-label="上一步"
               onClick={() => {
-                engine.current?.step(-1);
+                stepPlayback(-1);
                 setPlaying(false);
               }}
               disabled={busy}
@@ -814,7 +866,7 @@ export default function App() {
               className="icon-button"
               aria-label="下一步"
               onClick={() => {
-                engine.current?.step(1);
+                stepPlayback(1);
                 setPlaying(false);
               }}
               disabled={busy}
@@ -848,7 +900,7 @@ export default function App() {
                 setFollow(true);
                 setPace("study");
                 setPlaying(false);
-                engine.current?.seek(steps[confirmed]?.start ?? duration);
+                seekPlayback(steps[confirmed]?.start ?? duration);
               }}
             >
               逐步跟做
@@ -861,7 +913,7 @@ export default function App() {
                   onClick={() => {
                     const n = Math.min(confirmed + 1, moves.length);
                     setConfirmed(n);
-                    engine.current?.seek(steps[n]?.start ?? duration);
+                    seekPlayback(steps[n]?.start ?? duration);
                     setPlaying(false);
                   }}
                 >
@@ -876,7 +928,7 @@ export default function App() {
                   onClick={() => {
                     const n = Math.max(0, confirmed - 1);
                     setConfirmed(n);
-                    engine.current?.seek(steps[n]?.start ?? 0);
+                    seekPlayback(steps[n]?.start ?? 0);
                     setPlaying(false);
                   }}
                 >
@@ -932,6 +984,9 @@ export default function App() {
             void solve(state, palette, "我的魔方");
           }}
           onImport={importFile}
+          onRestart={() => {
+            importRequest.current++;
+          }}
         />
       )}
       {info && <Info onClose={() => setInfo(false)} />}

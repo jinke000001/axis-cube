@@ -104,11 +104,11 @@ describe("photo sampling", () => {
     const wrong = [...result.colors].flatMap((c, i) =>
       c === expected[i] ? [] : [i],
     );
-    expect(wrong).toEqual([17]);
+    expect(wrong).toEqual([]);
     const uncorrected = normalizeColors(result.colors);
     expect(
-      validateFacelets(uncorrected.facelets, uncorrected.palette).message,
-    ).toBe("黄色有 10 格，需要 9 格。");
+      validateFacelets(uncorrected.facelets, uncorrected.palette).valid,
+    ).toBe(true);
     const corrected = result.colors.split("");
     corrected[17] = expected[17];
     const final = classifyCapture(samples, corrected.join(""), new Set([17]));

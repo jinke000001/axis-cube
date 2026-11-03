@@ -14,3 +14,7 @@ output/
 .env.*
 *.pem
 *.key
+
+# Local browser traces and Blender recovery copies
+.playwright-cli/
+*.blend1
