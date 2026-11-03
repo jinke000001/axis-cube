@@ -1,12 +1,16 @@
 import { Quaternion, Vector3 } from 'three';
 import { applyMove, moveAffects, moveAngle, NORMALS, SLOTS, type Move, type Vec3 } from '../core/cube';
 import type { FormulaRecord, TeachingFinger, TeachingHand } from './types';
-import { fitPalmTargets,FINGER_BASES,FINGER_LENGTHS,REST_TIP_HEIGHTS } from './rig-spec';
+import { fitPalmTargets,FINGER_BASES } from './rig-spec';
+import { fingerLengths, fingerPadRadius, mirroredRest } from './hand-model';
 import { authoredIdleWaits,authoredReleaseRetirements,authoredSupportPlacements,authoredExternalReceptions,authoredFlickTransitions,authoredCornerReceptions,type AuthoredSupportPlacement,type AuthoredExternalReception,type AuthoredFlickTransition,type AuthoredCornerReception,authoredRelayYields,type AuthoredRelayYield,authoredSupportClearances,type AuthoredSupportClearance,authoredIdleParking,type AuthoredIdleParking,authoredJointReceptions,type AuthoredJointReception,authoredPreclearances,type AuthoredPreclearance,authoredUnderReceptions,type AuthoredUnderReception,authoredExternalPreforms,type AuthoredExternalPreform,authoredGripTemplates,type AuthoredGripTemplate,authoredQuarterClearances,type AuthoredQuarterClearance,authoredSupportedRelays,type AuthoredSupportedRelay,authoredGripRecoveries,type AuthoredGripRecovery,authoredRetirementYields,type AuthoredRetirementYield } from './authored-grips';
 
 /** All coordinates are cube-local metres, before the current SOURCE move. */
 export const TEACHING_CUBE_SIZE = .09;
-export const TIP_RADIUS = .0032;
+const padOf = (finger: TeachingFinger) => fingerPadRadius(finger);
+const reachOf = (finger: TeachingFinger) => fingerLengths(finger).reduce((sum, length) => sum + length, 0);
+/** Middle-finger pad, kept for callers that only need one reference radius. Contact placement uses padOf. */
+export const TIP_RADIUS = fingerPadRadius('middle');
 export const FINGER_NAMES: TeachingFinger[] = ['thumb','index','middle','ring','little'];
 export const HANDS: TeachingHand[] = ['left','right'];
 const H = TEACHING_CUBE_SIZE / 2;
@@ -135,19 +139,17 @@ export function withAuthoringMotionReference<T>(reference:TeachingMotion,run:()=
 const copyPose = (pose: TeachingPose): TeachingPose => structuredClone(pose);
 function restingTip(hand:TeachingHand,finger:TeachingFinger,pose:TeachingPose):TipPose {
   const sign=hand==='right'?1:-1,q=new Quaternion().fromArray(pose[hand].rotation);
-  return {point:A(new Vector3(-sign*.01,REST_TIP_HEIGHTS[finger],finger==='thumb'?.055:-.055).applyQuaternion(q).add(V(pose[hand].palm))),
+  return {point:A(new Vector3().fromArray(mirroredRest(hand,finger)).applyQuaternion(q).add(V(pose[hand].palm))),
     normal:A(new Vector3(sign,0,0).applyQuaternion(q)),resting:true};
 }
 function neutralPose(): TeachingPose {
   return Object.fromEntries(HANDS.map(hand => {
     const sign = hand === 'right' ? 1 : -1;
-    return [hand, {palm:[sign*.09,-.004,0],rotation:[0,0,0,1],tips: {
-      thumb:{point:[sign*.034,-.013,.049],normal:[0,0,1]},
-      index:{point:[sign*.033,.027,-.049],normal:[0,0,-1]},
-      middle:{point:[sign*.049,0,-.018],normal:[sign,0,0]},
-      ring:{point:[sign*.049,-.026,.008],normal:[sign,0,0]},
-      little:{point:[sign*.057,-.043,.018],normal:[sign,0,0]},
-    }}];
+    const palm: Vec3 = [sign * .152, -.004, 0];
+    return [hand, {palm, rotation:[0,0,0,1], tips: Object.fromEntries(FINGER_NAMES.map(finger => {
+      const local = mirroredRest(hand, finger);
+      return [finger, {point: A(new Vector3(local[0] + palm[0], local[1] + palm[1], local[2] + palm[2])), normal: A(new Vector3(sign, 0, 0)), resting: true}];
+    }))}];
   })) as TeachingPose;
 }
 export function contactPoint(contact: TeachingContact, move?: Move, angle=0): TipPose {
@@ -161,7 +163,7 @@ export function contactPoint(contact: TeachingContact, move?: Move, angle=0): Ti
 }
 function setTip(pose: TeachingPose, contact: TeachingContact, move: Move, angle: number, clearance=0) {
   const target = contactPoint(contact, move, angle);
-  target.point = A(V(target.point).addScaledVector(V(target.normal),TIP_RADIUS+clearance));
+  target.point = A(V(target.point).addScaledVector(V(target.normal),padOf(contact.finger)+clearance));
   pose[contact.hand].tips[contact.finger] = target;
 }
 function anchor(slot: typeof SLOTS[number], hand: TeachingHand, finger: TeachingFinger, rotating: boolean,
@@ -193,20 +195,23 @@ function chooseDriver(record: FormulaRecord, i: number,pose?:TeachingPose) {
       &&(step.hint?.hand??(moveAngle(step.move)<0?'right':'left'))===hand))finger='middle';
   if (hint?.hand) hand=hint.hand;
   if (hint) finger=hint.finger;
+  const authoredRelay=authoredSupportedRelays(record.id).find(item=>item.sourceStep===i);
+  if(authoredRelay) hand=authoredRelay.hand;
   // Repeated printed U′ U′ are separate strokes. Re-use the specified hand,
   // but let an unmarked second flick use the next finger without a wrist reset.
   if (!hint && i>0 && record.steps[i-1].move.notation === move.notation && move.face==='U'
       && record.steps[i-1].group===record.steps[i].group && move.turns!==2) finger='middle';
-  if(pose&&!hint?.hand&&move.face==='U'&&move.kind!=='wide') {
+  if(pose&&!hint?.hand&&!authoredRelay&&move.face==='U'&&move.kind!=='wide') {
     const comfort=(side:TeachingHand)=> {
       const contact=driveAnchor(move,side,finger,0,undefined,pose),base=FINGER_BASES[finger],sign=side==='right'?1:-1;
       const origin=new Vector3(sign*base[0],base[1],base[2]).applyQuaternion(new Quaternion().fromArray(pose[side].rotation)).add(V(pose[side].palm));
       let nearest=Infinity,farthest=0;
       for(let sample=0;sample<=8;sample++) {
-        const tip=contactPoint(contact,move,moveAngle(move)*sample/8),point=V(tip.point).addScaledVector(V(tip.normal),TIP_RADIUS),distance=origin.distanceTo(point);
+        const tip=contactPoint(contact,move,moveAngle(move)*sample/8),point=V(tip.point).addScaledVector(V(tip.normal),padOf(finger)),distance=origin.distanceTo(point);
         nearest=Math.min(nearest,distance);farthest=Math.max(farthest,distance);
       }
-      return {nearest,score:Math.max(0,.045-nearest)*3+Math.max(0,farthest-.098)*4};
+      const limit=reachOf(finger)-.004;
+      return {nearest,farthest,score:Math.max(0,.045-nearest)*3+Math.max(0,farthest-limit)*4};
     };
     const current=comfort(hand),other=comfort(opposite(hand));
     if(current.nearest<.036&&other.score+.003<current.score)hand=opposite(hand);
@@ -239,13 +244,13 @@ function driveAnchor(move: Move, hand: TeachingHand, finger: TeachingFinger, ang
       let maximumReach=0;
       if(origin)for(let sample=0;sample<=8;sample++) {
         const turn=new Quaternion().setFromAxisAngle(axis,direction*Math.PI*.5*sample/8);
-        const pad=p.clone().addScaledVector(n,TIP_RADIUS).applyQuaternion(turn);
+        const pad=p.clone().addScaledVector(n,padOf(finger)).applyQuaternion(turn);
         maximumReach=Math.max(maximumReach,origin.distanceTo(pad));
       }
       return {slot,work,maximumReach,cost:p.distanceTo(preference)*.4+p.distanceTo(previous)*.6+reach+normalPenalty};
     }).filter(x=>x.work>.35).sort((a,b)=>stableCost(a.cost,b.cost));
   if (!candidates.length) throw new Error(`没有可推动的侧面接触：${move.notation}`);
-  const usable=candidates.filter(candidate=>candidate.maximumReach<=FINGER_LENGTHS.reduce((a,b)=>a+b,0)-.002);
+  const usable=candidates.filter(candidate=>candidate.maximumReach<=reachOf(finger)-.002);
   const selected=usable[0]??[...candidates].sort((a,b)=>stableCost(a.maximumReach,b.maximumReach)||stableCost(a.cost,b.cost))[0];
   const contact=anchor(selected.slot,hand,finger,true,move,angle);
   if(move.face==='D'&&finger==='ring')contact.distalAway=[0,-1,0];
@@ -280,7 +285,7 @@ function supportAnchors(move: Move, active: TeachingHand, driver: TeachingFinger
         &&!(hand!==active&&nextMove&&moveAffects(nextMove,c.cubie))
         &&!supporters.some(other=>other.hand===hand&&V(other.normal).dot(V(c.normal))>.95)
         &&!occupiedPad(c,supporters).length
-        &&origin.distanceTo(V(contactPoint(c).point).addScaledVector(V(c.normal),TIP_RADIUS))<=FINGER_LENGTHS.reduce((a,b)=>a+b,0)-.002);
+        &&origin.distanceTo(V(contactPoint(c).point).addScaledVector(V(c.normal),padOf(finger)))<=reachOf(finger)-.002);
       if(existing){supporters.push({...existing,role:'support',rotating:false});continue;}
       const preferred=finger==='thumb'?new Vector3(sign*.03,-.015,.045):finger==='index'
         ?new Vector3(sign*.03,.018,-.045):new Vector3(sign*.03,0,-.045);
@@ -307,7 +312,7 @@ function sameDigit(a:Pick<TeachingContact,'hand'|'finger'>,b:Pick<TeachingContac
 }
 function occupiedPad(target:TeachingContact,held:TeachingContact[]) {
   const point=V(contactPoint(target).point);
-  return held.filter(contact=>!sameDigit(contact,target)&&point.distanceTo(V(contactPoint(contact).point))<TIP_RADIUS*2+.002);
+  return held.filter(contact=>!sameDigit(contact,target)&&point.distanceTo(V(contactPoint(contact).point))<padOf(target.finger)+padOf(contact.finger)+.002);
 }
 function flickNeedsRegrip(record:FormulaRecord,index:number,pose:TeachingPose,hand:TeachingHand) {
   const move=record.steps[index].move,driver=chooseDriver(record,index,pose);
@@ -320,8 +325,8 @@ function flickNeedsRegrip(record:FormulaRecord,index:number,pose:TeachingPose,ha
   const origin=new Vector3(sign*base[0],base[1],base[2]).applyQuaternion(new Quaternion().fromArray(pose[hand].rotation)).add(V(pose[hand].palm));
   return Array.from({length:9},(_,i)=> {
     const point=contactPoint(contact,move,moveAngle(move)*i/8);
-    return origin.distanceTo(V(point.point).addScaledVector(V(point.normal),TIP_RADIUS));
-  }).some(distance=>distance<.036||distance>.106);
+    return origin.distanceTo(V(point.point).addScaledVector(V(point.normal),padOf(driver.finger)));
+  }).some(distance=>distance<.036||distance>reachOf(driver.finger)-.002);
 }
 function temporaryGrip(hand:TeachingHand,pose:TeachingPose,held:TeachingContact[]=[]):TeachingContact[] {
   const normal=new Vector3(0,0,1).applyQuaternion(new Quaternion().fromArray(pose[hand].rotation));
@@ -353,6 +358,7 @@ function compileTeachingProgram(record: FormulaRecord,original=false): TeachingM
     anchor(SLOTS.find(s=>s.face==='B'&&s.position[0]===(hand==='right'?1:-1)&&s.position[1]===0)!,hand,initialGrip&&hand===initialDriver.hand?initialDriver.finger:'index',false),
   ]);
   for(const c of held)setTip(pose,c,record.steps[0]?.move??{face:'U',turns:1,notation:'U'},0);
+  fitPalmTargets(pose,held.map(c=>({hand:c.hand,finger:c.finger})));
   for(const h of HANDS)for(const f of FINGER_NAMES)
     if(!held.some(c=>c.hand===h&&c.finger===f))pose[h].tips[f]=restingTip(h,f,pose);
   const program: TeachingMotion={formulaId:record.id,initialState:record.initialState,states:[record.initialState],
@@ -529,7 +535,7 @@ function compileTeachingProgram(record: FormulaRecord,original=false): TeachingM
             let near=Infinity,far=0;
             for(let n=0;n<=12;n++) {
               const point=contactPoint(contact,move,currentAngle+moveAngle(move)/count*n/12);
-              const distance=origin.distanceTo(V(point.point).addScaledVector(V(point.normal),TIP_RADIUS));
+              const distance=origin.distanceTo(V(point.point).addScaledVector(V(point.normal),padOf(finger)));
               near=Math.min(near,distance);far=Math.max(far,distance);
             }
             const shift=V(trial[driver.hand].palm).distanceTo(V(pose[driver.hand].palm));
@@ -559,7 +565,7 @@ function compileTeachingProgram(record: FormulaRecord,original=false): TeachingM
         const thumbFace=faces[0],indexFace=faces.find(face=>V(NORMALS[face]).dot(V(NORMALS[thumbFace]))<-.99)!;
         drives=[thumbFace,indexFace].map((face,i)=> {
           const slot=SLOTS.filter(x=>x.face===face&&Math.round(V(x.position).dot(axis))===layer)
-            .map(slot=> {const point=V(slot.position).multiplyScalar(P).addScaledVector(V(slot.normal),H-P+TIP_RADIUS);
+            .map(slot=> {const point=V(slot.position).multiplyScalar(P).addScaledVector(V(slot.normal),H-P+padOf(i?driver.finger:'thumb'));
               // The outer index enters above the middle pad. Sharing its
               // row forces the index pad to pass through the held middle
               // phalanx while crossing toward the rear face.
@@ -610,11 +616,11 @@ function compileTeachingProgram(record: FormulaRecord,original=false): TeachingM
             const origin=new Vector3(sign*base[0],base[1],base[2]).applyQuaternion(q).add(V(palm));
             for(let sample=0;sample<=16;sample++) {
               const tip=contactPoint(contact,move,currentAngle+moveAngle(move)/count*sample/16);
-              const pad=V(tip.point).addScaledVector(V(tip.normal),TIP_RADIUS);
+              const pad=V(tip.point).addScaledVector(V(tip.normal),padOf(contact.finger));
               near=Math.min(near,origin.distanceTo(pad));
               // Match the reach envelope used by fitPalmTargets so the later
               // contact/drive phases do not pull this prepared palm inward.
-              far=Math.max(far,origin.distanceTo(pad.addScaledVector(V(tip.normal),FINGER_LENGTHS[2]*.55)));
+              far=Math.max(far,origin.distanceTo(pad.addScaledVector(V(tip.normal),fingerLengths(contact.finger)[2]*.55)));
             }
           }
           const shift=V(palm).distanceTo(V(h.palm));
@@ -652,7 +658,7 @@ function compileTeachingProgram(record: FormulaRecord,original=false): TeachingM
       if(wrist&&drives.length===2) {
         settling=drives.find(contact=> {
           const target=contactPoint(contact,move,currentAngle);
-          const pad=V(target.point).addScaledVector(V(target.normal),TIP_RADIUS);
+          const pad=V(target.point).addScaledVector(V(target.normal),padOf(contact.finger));
           return pad.distanceTo(V(pose[contact.hand].tips[contact.finger].point))<.018;
         });
         if(settling) {
@@ -948,7 +954,7 @@ function compileIdleParking(program:TeachingMotion) {
     const setTip=(pose:TeachingPose)=> {
       const h=pose[authored.hand],sign=authored.hand==='right'?1:-1,base=FINGER_BASES[authored.finger];
       const point=new Vector3(sign*base[0],base[1],base[2]);
-      for(let j=0;j<3;j++)point.addScaledVector(V(authored.directions[j]),FINGER_LENGTHS[j]);
+      for(let j=0;j<3;j++)point.addScaledVector(V(authored.directions[j]),fingerLengths(authored.finger)[j]);
       const q=new Quaternion().fromArray(h.rotation);
       h.tips[authored.finger]={point:A(point.applyQuaternion(q).add(V(h.palm))),normal:A(V(authored.directions[2]).multiplyScalar(-1).applyQuaternion(q)),resting:false};
     };
@@ -1333,7 +1339,7 @@ export function validateTeachingMotion(program:TeachingMotion) {
       if(i===8) continue;
       for(const contact of segment.contacts.filter(c=>c.rotating)) {
         const surface=contactPoint(contact,move,frame.angle),tip=frame.pose[contact.hand].tips[contact.finger];
-        maxSlip=Math.max(maxSlip,V(tip.point).distanceTo(V(surface.point).addScaledVector(V(surface.normal),TIP_RADIUS)));
+        maxSlip=Math.max(maxSlip,V(tip.point).distanceTo(V(surface.point).addScaledVector(V(surface.normal),padOf(contact.finger))));
         if(move.kind!=='rotation'&&!gripHands.has(contact.hand)) {
           const velocity=V(NORMALS[move.face]).cross(V(surface.point)).multiplyScalar(Math.sign(moveAngle(move))).normalize();
           minWork=Math.min(minWork,V(surface.normal).negate().dot(velocity));

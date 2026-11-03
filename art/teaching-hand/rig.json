@@ -1,109 +1,529 @@
 {
-  "version": 1,
+  "version": 2,
+  "handModelId": "axis-teaching-hand-v2",
   "units": "metres",
-  "linkLengths": [
-    0.045,
-    0.04,
-    0.019
-  ],
-  "baseOffsetsRight": {
-    "thumb": [
-      -0.014,
-      -0.016,
-      0.021
-    ],
-    "index": [
-      -0.014,
-      0.022,
-      -0.014
-    ],
-    "middle": [
-      -0.014,
-      0.007,
-      -0.019
-    ],
-    "ring": [
-      -0.014,
-      -0.009,
-      -0.018
-    ],
-    "little": [
-      -0.014,
-      -0.024,
-      -0.012
-    ]
-  },
+  "runtime": "Three.js rigid node transforms; no mesh deformation or runtime link scaling",
   "joints": [
     "mcp",
     "pip",
     "dip"
   ],
-  "fingertipRadius": 0.0032,
-  "geometry": {
-    "linkWidths": [
-      0.0075,
-      0.0075,
-      0.006
-    ],
-    "linkDepths": [
-      0.0065,
-      0.0065,
-      0.0065
-    ],
-    "linkEndInset": 0.002,
-    "linkBevel": 0.0012,
-    "mcpMountRadius": 0.0025,
-    "mcpMountLength": 0.008,
-    "mcpMountRadialSegments": 16,
-    "jointRadii": [
-      0.0045,
-      0.0037,
-      0.0037
-    ],
-    "padRadius": 0.0032,
-    "uvSphereSegments": 12,
-    "uvSphereRings": 8,
-    "inlayDepthOffset": 0.0035,
-    "inlayDepth": 0.0006,
-    "palmInlayOffsetRight": [
-      0.0085,
-      0.001,
-      0.006
-    ],
-    "palmInlaySize": [
-      0.001,
-      0.033,
-      0.002
-    ],
-    "palmInlayBevel": 0.0003,
-    "palmSize": [
-      0.016,
-      0.061,
-      0.043
-    ],
-    "palmBevel": 0.003,
-    "palmInnerSize": [
-      0.002,
-      0.047,
-      0.032
-    ],
-    "palmInnerOffset": 0.0065,
-    "palmInnerBevel": 0.001,
-    "armHousingWidth": 0.021,
-    "armHousingDepth": 0.023,
-    "armEndInset": 0.0075,
-    "armHousingBevel": 0.004,
-    "armBearingRadius": 0.014,
-    "wristCouplerRadius": 0.012
-  },
+  "linkLengths": [
+    0.052,
+    0.036,
+    0.023
+  ],
+  "fingertipRadius": 0.0072,
   "armLengths": [
     0.2,
     0.19
   ],
   "wristAttachment": [
     0,
-    -0.029,
-    0.012
+    -0.006,
+    0.064
   ],
-  "runtime": "Three.js rigid node transforms; no mesh deformation or runtime link scaling"
+  "baseOffsetsRight": {
+    "thumb": [
+      -0.008,
+      -0.024,
+      0.012
+    ],
+    "index": [
+      -0.016,
+      0.031,
+      -0.028
+    ],
+    "middle": [
+      -0.017,
+      0.01,
+      -0.031
+    ],
+    "ring": [
+      -0.016,
+      -0.011,
+      -0.027
+    ],
+    "little": [
+      -0.014,
+      -0.03,
+      -0.018
+    ]
+  },
+  "fingers": {
+    "thumb": {
+      "lengths": [
+        0.04,
+        0.032,
+        0.022
+      ],
+      "baseRight": [
+        -0.008,
+        -0.024,
+        0.012
+      ],
+      "padRadius": 0.008,
+      "linkRadii": [
+        0.0092,
+        0.0082,
+        0.0072
+      ],
+      "jointRadii": [
+        0.0104,
+        0.0094,
+        0.0084
+      ],
+      "restLocal": [
+        -0.0466,
+        0.0239,
+        -0.0344
+      ],
+      "axes": {
+        "mcp": {
+          "hinge": [
+            0,
+            0,
+            1
+          ],
+          "spread": [
+            1,
+            0,
+            0
+          ]
+        },
+        "pip": {
+          "hinge": [
+            0,
+            0,
+            1
+          ]
+        },
+        "dip": {
+          "hinge": [
+            0,
+            0,
+            1
+          ]
+        }
+      },
+      "limits": {
+        "mcpFlex": [
+          -0.5,
+          1.2
+        ],
+        "mcpSpread": [
+          -0.9,
+          0.8
+        ],
+        "pip": [
+          -0.15,
+          1.7
+        ],
+        "dip": [
+          -0.2,
+          1.45
+        ]
+      }
+    },
+    "index": {
+      "lengths": [
+        0.048,
+        0.037,
+        0.021
+      ],
+      "baseRight": [
+        -0.016,
+        0.031,
+        -0.028
+      ],
+      "padRadius": 0.007,
+      "linkRadii": [
+        0.008,
+        0.007,
+        0.0062
+      ],
+      "jointRadii": [
+        0.0092,
+        0.0082,
+        0.0074
+      ],
+      "restLocal": [
+        -0.0569,
+        0.047,
+        -0.1054
+      ],
+      "axes": {
+        "mcp": {
+          "hinge": [
+            1,
+            0,
+            0
+          ],
+          "spread": [
+            0,
+            1,
+            0
+          ]
+        },
+        "pip": {
+          "hinge": [
+            1,
+            0,
+            0
+          ]
+        },
+        "dip": {
+          "hinge": [
+            1,
+            0,
+            0
+          ]
+        }
+      },
+      "limits": {
+        "mcpFlex": [
+          -0.4,
+          1.55
+        ],
+        "mcpSpread": [
+          -0.4,
+          0.45
+        ],
+        "pip": [
+          -0.08,
+          1.9
+        ],
+        "dip": [
+          -0.12,
+          1.45
+        ]
+      }
+    },
+    "middle": {
+      "lengths": [
+        0.052,
+        0.036,
+        0.023
+      ],
+      "baseRight": [
+        -0.017,
+        0.01,
+        -0.031
+      ],
+      "padRadius": 0.0072,
+      "linkRadii": [
+        0.0084,
+        0.0073,
+        0.0064
+      ],
+      "jointRadii": [
+        0.0096,
+        0.0086,
+        0.0076
+      ],
+      "restLocal": [
+        -0.0542,
+        0.01,
+        -0.1165
+      ],
+      "axes": {
+        "mcp": {
+          "hinge": [
+            1,
+            0,
+            0
+          ],
+          "spread": [
+            0,
+            1,
+            0
+          ]
+        },
+        "pip": {
+          "hinge": [
+            1,
+            0,
+            0
+          ]
+        },
+        "dip": {
+          "hinge": [
+            1,
+            0,
+            0
+          ]
+        }
+      },
+      "limits": {
+        "mcpFlex": [
+          -0.4,
+          1.55
+        ],
+        "mcpSpread": [
+          -0.35,
+          0.35
+        ],
+        "pip": [
+          -0.08,
+          1.9
+        ],
+        "dip": [
+          -0.12,
+          1.45
+        ]
+      }
+    },
+    "ring": {
+      "lengths": [
+        0.046,
+        0.039,
+        0.02
+      ],
+      "baseRight": [
+        -0.016,
+        -0.011,
+        -0.027
+      ],
+      "padRadius": 0.0066,
+      "linkRadii": [
+        0.0076,
+        0.0067,
+        0.0059
+      ],
+      "jointRadii": [
+        0.0088,
+        0.0079,
+        0.0071
+      ],
+      "restLocal": [
+        -0.0539,
+        -0.0265,
+        -0.1028
+      ],
+      "axes": {
+        "mcp": {
+          "hinge": [
+            1,
+            0,
+            0
+          ],
+          "spread": [
+            0,
+            1,
+            0
+          ]
+        },
+        "pip": {
+          "hinge": [
+            1,
+            0,
+            0
+          ]
+        },
+        "dip": {
+          "hinge": [
+            1,
+            0,
+            0
+          ]
+        }
+      },
+      "limits": {
+        "mcpFlex": [
+          -0.4,
+          1.55
+        ],
+        "mcpSpread": [
+          -0.45,
+          0.4
+        ],
+        "pip": [
+          -0.08,
+          1.9
+        ],
+        "dip": [
+          -0.12,
+          1.45
+        ]
+      }
+    },
+    "little": {
+      "lengths": [
+        0.034,
+        0.026,
+        0.017
+      ],
+      "baseRight": [
+        -0.014,
+        -0.03,
+        -0.018
+      ],
+      "padRadius": 0.0056,
+      "linkRadii": [
+        0.0066,
+        0.0058,
+        0.005
+      ],
+      "jointRadii": [
+        0.0078,
+        0.007,
+        0.0062
+      ],
+      "restLocal": [
+        -0.048,
+        -0.0535,
+        -0.0637
+      ],
+      "axes": {
+        "mcp": {
+          "hinge": [
+            1,
+            0,
+            0
+          ],
+          "spread": [
+            0,
+            1,
+            0
+          ]
+        },
+        "pip": {
+          "hinge": [
+            1,
+            0,
+            0
+          ]
+        },
+        "dip": {
+          "hinge": [
+            1,
+            0,
+            0
+          ]
+        }
+      },
+      "limits": {
+        "mcpFlex": [
+          -0.45,
+          1.6
+        ],
+        "mcpSpread": [
+          -0.55,
+          0.35
+        ],
+        "pip": [
+          -0.08,
+          1.9
+        ],
+        "dip": [
+          -0.12,
+          1.4
+        ]
+      }
+    }
+  },
+  "materials": {
+    "shell": {
+      "color": [
+        0.42,
+        0.32,
+        0.22
+      ],
+      "metalness": 0.05,
+      "roughness": 0.62
+    },
+    "joint": {
+      "color": [
+        0.015,
+        0.016,
+        0.018
+      ],
+      "metalness": 0.12,
+      "roughness": 0.4
+    },
+    "pad": {
+      "color": [
+        0.05,
+        0.05,
+        0.052
+      ],
+      "metalness": 0.08,
+      "roughness": 0.72
+    },
+    "metal": {
+      "color": [
+        0.62,
+        0.64,
+        0.68
+      ],
+      "metalness": 0.9,
+      "roughness": 0.3
+    }
+  },
+  "geometry": {
+    "linkWidths": [
+      0.0168,
+      0.0146,
+      0.0128
+    ],
+    "linkDepths": [
+      0.0168,
+      0.0146,
+      0.0128
+    ],
+    "linkEndInset": 0.002,
+    "linkBevel": 0.0012,
+    "mcpMountRadius": 0.0042,
+    "mcpMountLength": 0.012,
+    "mcpMountRadialSegments": 16,
+    "jointRadii": [
+      0.0096,
+      0.0086,
+      0.0076
+    ],
+    "padRadius": 0.0072,
+    "uvSphereSegments": 24,
+    "uvSphereRings": 16,
+    "fingerRadialSegments": 24,
+    "inlayDepthOffset": 0,
+    "inlayDepth": 0,
+    "palmCenterOffset": [
+      0,
+      0,
+      0
+    ],
+    "palmInlayOffsetRight": [
+      0.012,
+      0,
+      0.006
+    ],
+    "palmInlaySize": [
+      0.0012,
+      0.034,
+      0.004
+    ],
+    "palmInlayBevel": 0.0003,
+    "palmSize": [
+      0.028,
+      0.084,
+      0.07
+    ],
+    "palmBevel": 0.0045,
+    "palmInnerSize": [
+      0.005,
+      0.046,
+      0.034
+    ],
+    "palmInnerOffset": 0.009,
+    "palmInnerBevel": 0.0012,
+    "armHousingWidth": 0.021,
+    "armHousingDepth": 0.021,
+    "armShellRadius": 0.0105,
+    "armRadialSegments": 24,
+    "armEndInset": 0.0075,
+    "armHousingBevel": 0.004,
+    "armBearingRadius": 0.014,
+    "wristCouplerRadius": 0.013
+  },
+  "geometryDigest": "094a6cebd1aa23ffd5bfe09245e98b7555ff965813e5460d8794a4dfc377d29b"
 }

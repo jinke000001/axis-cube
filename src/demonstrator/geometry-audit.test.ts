@@ -168,9 +168,12 @@ describe('independent geometric collision measurements',()=> {
   });
 
   it('catches the published v51 OLL31 DIP/shaft collision hidden between clear 10 ms endpoints',()=> {
-    const metadata=readFileSync(new URL('../../art/teaching-hand/rig.json',import.meta.url));
+    // The counterexample was measured on the baseline hand. The live v2 spec is
+    // a different shell, so this regression stays pinned to that frozen rig.
+    const metadata=readFileSync(new URL('./audit-fixtures/baseline-rig.json',import.meta.url));
     expect(createHash('sha256').update(metadata).digest('hex')).toBe(shortCollision.geometryMetadataSha256);
-    const evaluate=(sample:typeof shortCollision.samples[number])=>auditFingerSelfVolumes(sample.fingers as unknown as Parameters<typeof auditFingerSelfVolumes>[0]).confirmed;
+    const baseline=JSON.parse(metadata.toString('utf8'));
+    const evaluate=(sample:typeof shortCollision.samples[number])=>auditFingerSelfVolumes(sample.fingers as unknown as Parameters<typeof auditFingerSelfVolumes>[0],.0003,baseline).confirmed;
     const coarse=shortCollision.samples.filter(sample=>Math.abs(sample.time-4.07)<1e-10||Math.abs(sample.time-4.08)<1e-10);
     expect(coarse).toHaveLength(2);expect(coarse.flatMap(evaluate)).toEqual([]);
     const planned=planGeometryRefinement([{start:4.07,end:4.08,reason:'speed-trigger'}],17);

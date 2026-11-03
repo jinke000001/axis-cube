@@ -1,0 +1,109 @@
+{
+  "version": 1,
+  "units": "metres",
+  "linkLengths": [
+    0.045,
+    0.04,
+    0.019
+  ],
+  "baseOffsetsRight": {
+    "thumb": [
+      -0.014,
+      -0.016,
+      0.021
+    ],
+    "index": [
+      -0.014,
+      0.022,
+      -0.014
+    ],
+    "middle": [
+      -0.014,
+      0.007,
+      -0.019
+    ],
+    "ring": [
+      -0.014,
+      -0.009,
+      -0.018
+    ],
+    "little": [
+      -0.014,
+      -0.024,
+      -0.012
+    ]
+  },
+  "joints": [
+    "mcp",
+    "pip",
+    "dip"
+  ],
+  "fingertipRadius": 0.0032,
+  "geometry": {
+    "linkWidths": [
+      0.0075,
+      0.0075,
+      0.006
+    ],
+    "linkDepths": [
+      0.0065,
+      0.0065,
+      0.0065
+    ],
+    "linkEndInset": 0.002,
+    "linkBevel": 0.0012,
+    "mcpMountRadius": 0.0025,
+    "mcpMountLength": 0.008,
+    "mcpMountRadialSegments": 16,
+    "jointRadii": [
+      0.0045,
+      0.0037,
+      0.0037
+    ],
+    "padRadius": 0.0032,
+    "uvSphereSegments": 12,
+    "uvSphereRings": 8,
+    "inlayDepthOffset": 0.0035,
+    "inlayDepth": 0.0006,
+    "palmInlayOffsetRight": [
+      0.0085,
+      0.001,
+      0.006
+    ],
+    "palmInlaySize": [
+      0.001,
+      0.033,
+      0.002
+    ],
+    "palmInlayBevel": 0.0003,
+    "palmSize": [
+      0.016,
+      0.061,
+      0.043
+    ],
+    "palmBevel": 0.003,
+    "palmInnerSize": [
+      0.002,
+      0.047,
+      0.032
+    ],
+    "palmInnerOffset": 0.0065,
+    "palmInnerBevel": 0.001,
+    "armHousingWidth": 0.021,
+    "armHousingDepth": 0.023,
+    "armEndInset": 0.0075,
+    "armHousingBevel": 0.004,
+    "armBearingRadius": 0.014,
+    "wristCouplerRadius": 0.012
+  },
+  "armLengths": [
+    0.2,
+    0.19
+  ],
+  "wristAttachment": [
+    0,
+    -0.029,
+    0.012
+  ],
+  "runtime": "Three.js rigid node transforms; no mesh deformation or runtime link scaling"
+}
