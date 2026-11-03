@@ -2,6 +2,8 @@
 
 ## 2026-11-03: CFOP web, first 54 demonstrations
 
+Final source checkpoint: `axis-web-cfop-54-2026-11-03-r2`. The follow-up packaging commit excludes a local dependency-directory symlink; runtime files are unchanged.
+
 Production: https://axis-cube-jinke.netlify.app/
 Netlify deploy: `6ae91f01555fc0c83f131871`.
 119 cases and 121 source algorithms retained; 54 validated mechanical demonstrations enabled, 67 marked as calibrating. Web only; native projects are preserved but no new APK or iOS build is included.
