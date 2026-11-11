@@ -1,5 +1,7 @@
 # 第三方来源与修改
 
+2026-11-11 的 C114 r1／U8 r1 展台使用早期白色 Wuji 手。运行资产、上游版本、几何处理说明和 MIT 许可随 `public/models/wuji-teaching/` 提供。
+
 本项目未复制 Kimi 展示站的页面源码、模型或动作库；该展示仅用于理解早期参考方向。场景、机械臂造型、动作编排和产品界面为本项目实现。
 
 2026-11-01 的 CFOP 指法演示器使用本项目原创教学手：Blender 源文件在 `art/teaching-hand/axis-teaching-hand.blend`，刚性关节规格在同目录 `rig.json`，网页加载 `public/models/teaching-hand/axis-teaching-hand.glb`。旧 Wuji 模型与许可保留，但新演示入口不加载该模型。

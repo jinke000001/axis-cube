@@ -1,0 +1,13 @@
+{
+  "scope": "Specific unloaded d-prime left-side bridge;65 actual full STL poses for both before/after variants. No motion or visual acceptance.",
+  "assetSHA256": "7cafe14e66ed299fbd191de8abdbcc6171ff4fcf1f75564d593a4a06684d5081",
+  "maxRelativeX": 0.16469441480214236,
+  "gateX": -0.23,
+  "clearanceMM": 20,
+  "sourceSHA256": {
+    "scripts/wuji-samples/lower-seam-envelope.ts": "9f9bb695079df39c3cbb39121245e8ed89d89f88f1e65b134f913e1fb15db197",
+    "src/wuji-samples/wide-lower.ts": "71261ac2fcf13a4e2151c721e504ce110197529877f937d2bceed929b6ac8f7c",
+    "src/wuji-samples/wide-lower-ring.ts": "94e89d8c4236aa6cdcc799682f4249ed3038f95b12f5a6e54034c1fb8edae88e",
+    "art/wuji-teaching/compact-handoff-calibration.json": "2a17da2e8112f6e28f8568d5e7f4e9688f0fc7721732309c4a20dfa4c9d3e0b3"
+  }
+}

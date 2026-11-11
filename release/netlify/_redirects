@@ -1,0 +1,14 @@
+# The full formula / personal-solve app handles these routes without deleting old data.
+/ /index.html 200
+/library /index.html 200
+/library/* /index.html 200
+/solve /index.html 200
+/solve/* /index.html 200
+/learn /index.html 200
+/learn/* /index.html 200
+/studio /index.html 200
+/studio/* /index.html 200
+/help /index.html 200
+/help/* /index.html 200
+# Real missing-resource status; private/project paths are never SPA-served as 200.
+/* /404.html 404

@@ -1,0 +1,5 @@
+import{defineConfig}from'vite';import{resolve}from'node:path';import u8 from'./exhibition-u8-r1.vite.config.ts';
+export default defineConfig({...u8,envDir:false,plugins:[...(u8.plugins??[]),{name:'u8-release-copy-only',enforce:'pre',transform(code,id){
+ if(id.split('?')[0]===resolve('src/wuji-exhibition-u8-r1/ExhibitionApp.tsx')){for(const[a,b]of[['本地候选可播放','指法演示可播放'],['本地候选 U8 · 119 情形','119 情形']]){if(!code.includes(a))throw Error('Release wording source changed: '+a);code=code.replace(a,b);}return code;}
+ if(id.split('?')[0]===resolve('src/wuji-exhibition-u8-r1/main.tsx')){const a='请重新加载本地展台后继续。原有记录保留。';if(!code.includes(a))throw Error('Recovery wording source changed');return code.replace(a,'请重新加载页面后继续。原有记录保留。');}
+ },transformIndexHtml(html){return html.replace('AXIS 机械指法展台 · 本地候选 U8','AXIS · 魔方机械指法与复原').replace('href="data:,"','href="/axis-mark.svg"').replace('</head>','<meta name="description" content="119个CFOP情形、121段机械指法演示，支持导入六面照片并观看个人魔方复原。"><meta name="theme-color" content="#0b141a"></head>');}}],build:{...u8.build,outDir:process.env.AXIS_RELEASE_BUILD_DIR??'output/axis-netlify-u8-r1/build',sourcemap:false,copyPublicDir:false}});

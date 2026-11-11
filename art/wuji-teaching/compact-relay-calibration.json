@@ -1,0 +1,21 @@
+{
+  "assetSHA256": "7cafe14e66ed299fbd191de8abdbcc6171ff4fcf1f75564d593a4a06684d5081",
+  "chosenIndexFold": [
+    1.5,
+    0.37,
+    0.8,
+    0.8
+  ],
+  "middlePrepared": [
+    0.57,
+    0,
+    0.14,
+    0.22
+  ],
+  "releaseDepthMM": 0,
+  "sourcePaths": [
+    "art/wuji-teaching/side-flick-calibration.json",
+    "art/wuji-teaching/right-middle-side-calibration.json"
+  ],
+  "method": "Prepare middle before first drive; actively curl index clear on first release, retain that folded index during second drive; direct 16.659mm wrist join, no lateral avoidance detour."
+}

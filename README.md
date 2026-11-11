@@ -2,64 +2,52 @@
 
 在固定的机械展台上，按原表公式观察双手机械指法。选择情形、核对拿法，再慢放、逐步观察或循环动作组。
 
-**[线上地址](https://axis-cube-jinke.netlify.app/)**。2026-11-03：分批首发已上线，开放54段已验收演示，保留全部119情形、121条主/替代公式资料；其余67段演示明确标为“演示校准中”。本轮仅发布网页，不制作 Android APK，iOS App 继续暂停。进度和证据见 [实施记录](docs/cfop-demonstrator-status.md)。
+**C114 r1／U8 r1 已上线。** 公式库开放 119 个情形和 121 段机械指法演示，保留主公式、替代式及原表指法。个人复原支持拍照或导入六面照片、核对颜色和观看白色机械手复原。
+
+[打开 AXIS](https://axis-cube-jinke.netlify.app/) · [还原我的魔方](https://axis-cube-jinke.netlify.app/solve) · [版本与验收记录](RELEASES.md)
 
 ## 使用方式
 
-- GAN 原表 119 个情形、121 条主/替代公式，保留原始编号、括号分组、重复动作、半圈方向与手指颜色。完整指法的当前验收状态以实施记录为准。
+- GAN 原表 119 个情形、121 条主/替代公式，保留原始编号、括号分组、重复动作、半圈方向与手指颜色。当前开放全部 121 段演示。
 - 桌面左侧目录独立滚动；手机用底部抽屉选择公式。列表和说明滚动不影响展台的位置、大小或视角。
-- 控制包括播放/暂停、上一步/下一步、慢放、动作组循环、视角复位与手部透视。切换公式停在起始握姿，不自动播放。
+- 控制包括播放/暂停、上一步/下一步、0.6×／1×／2×、动作组循环、视角复位与手部透视。切换公式停在起始握姿，不自动播放。
 - 情形图、拿法、原表公式与完成检查始终可读。三维或动作资源加载失败时禁用演示，避免在新公式标题下播放旧动作。
 
 原表蓝字为左食指、红字为右拇指、橙字为无名指。原表没有明确的左右手、支撑与接力步骤，由教学编排补全并在动作记录中区别标注。机械手是教学可视化，不代表实体机器人的执行能力。
 
-课程、练习、拍照和自由还原入口已退出当前产品。对应源码、旧存档、照片颜色草稿和已接受版本保留；新演示偏好单独保存，不迁移或覆盖旧数据。旧 `/library/cfop/:id` 链接继续定位对应情形；旧课程和还原链接进入公式选择。
+在「还原我的魔方」中，按前、右、后、左、上、下录入六面。核对每面颜色，必要时改单格，再生成复原演示。照片在浏览器内处理，旧链接可继续定位原表情形。
 
 ## 本地运行
 
-项目位于 T7 Shield 外置盘，本地启动需要保持硬盘连接。建议使用 Node.js 24（开发验证版本为 24.14.0）。
+使用 Node.js 24。安装依赖、构建 U8 正式网页并启动静态预览。
 
 ```sh
 npm ci
-npm run dev
+node scripts/wuji-release/build.mjs
+npm exec -- vite preview --config release-u8-r1.vite.config.ts --outDir output/axis-netlify-u8-release-r1/site --host 127.0.0.1 --port 4173 --strictPort
 ```
 
-打开 http://localhost:3421 。生产构建与预览：
+[本地公式库](http://127.0.0.1:4173/) · [本地个人复原](http://127.0.0.1:4173/solve)
 
-```sh
-npm run build
-npm run preview
-```
-
-主入口 `/`、`/library` 为公式选择，`/library/cfop/gan-f2l-40` 等深链接直接打开对应情形；PLL 01/02 的替代式使用 `?variant=1`。现有 `体验机械展馆.command` 和 `体验入门网站.command` 保留旧固定候选，不启动本轮开发版。
+公式深链接示例为 `/library/cfop/gan-f2l-40`。PLL 01 和 PLL 02 的替代式使用 `?variant=1`。
 
 ## 验证与目录
 
 ```sh
-npm test
-npm run build
+npm exec -- vitest run src/wuji-samples/grip-library-c114.test.ts src/wuji-samples/grip-c114.test.ts
 ```
 
-- `src/demonstrator/`：原表记录、固定界面、机械动作、刚性关节与播放接口。
-- `public/motions/cfop/`：离线校准的逐公式指法轨迹，按选择加载；浏览器不临时求解整条动作。
-- `art/teaching-hand/`、`public/models/teaching-hand/`：原创教学机械手 Blender 源文件、关节规格和 GLB。
-- `src/core/`、`src/scene/`：魔方状态与既有三维基础。
-- `src/learning/`、`src/site/`、`src/museum/`：保留的旧课程和展馆实现，当前入口不挂载。
-- `src/platform/`、`ios/`、`android/`：保留的原生工程；本轮不构建安装包。
-- `vendor/`、`tests/fixtures/`：固定版本求解器及测试资料。
-- `scripts/`：构建资产和部署辅助；部分研究脚本使用本机私有 `evidence/`，并非日常构建步骤。
-
-源公式/逐步状态、接触与碰撞、连续轨迹、真实网页交互、旧数据保护分别记录结果。公式最终还原正确不等于机械指法正确；浏览器手机尺寸模拟也不代表真实 iPhone/Android 的流畅度或真人指法学习效果。具体通过项、失败历史与未验证项见 [实施记录](docs/cfop-demonstrator-status.md)。
+- `src/wuji-exhibition-u8-r1/` 提供公式库和个人复原展台，`src/wuji-solve-c114/` 将求解输出接入 C114 动作。
+- `src/wuji-samples/` 和 `art/wuji-teaching/` 包含握姿、指尖侧拨、动作编排和校准数据。
+- `public/models/wuji-teaching/` 包含网页使用的白色机械手 GLB、模型说明和许可。
+- `src/core/`、`src/wuji-solve-v1/` 和 `vendor/` 提供照片识别、魔方状态与 CFOP 求解。
+- `release/axis-u8-r1-sources.json` 固定构建输入的校验值和正式产物身份。
 
 ## 部署
 
-仓库包含 `netlify.toml`。构建命令为 `npm run build`，发布目录为 `dist`，Node.js 24。软件验收使用固定构建产物；不从正在修改的开发目录直接发布。
+`netlify.toml` 使用 Node.js 24，构建命令与上面的 U8 本地构建相同，发布目录为 `output/axis-netlify-u8-release-r1/site`。构建校验源码输入与正式发布产物，逐文件清单位于发布目录的上一级。`scripts/wuji-release/prepare.mjs` 按清单导出发布文件，`scripts/wuji-release/check.mjs` 核对线上文件、路由与响应头。
 
-`node scripts/prepare-netlify.mjs` 将构建产物复制到干净的临时目录并生成文件清单，按 `src/demonstrator/release-manifest.json` 要求首批54条轨迹与教学手模型齐全，逐一核对签名、版本和SHA，拒绝缺失、额外或意外文件。历史全121齐备门槛及分批授权变化在实施记录中保留。`scripts/check-netlify.mjs` 核对现有 AXIS 站点与清单、响应头和路由。该校验绑定现有站点，迁移时需调整。
-
-此前已接受版本的部署 ID 为 `6ae6da002fd1851b13234e30`，作为本轮回退版本。旧展馆的历史验收见 [展馆记录](docs/museum-upgrade-progress.md)，原手机包历史见 [手机记录](docs/mobile-app-progress.md)。
-
-公开发布不包含个人公式照片、开发证据、Blender 源文件、历史备份、部署账户配置或凭据。
+正式部署、回退编号、实测范围及真机待验项见 [版本与验收记录](RELEASES.md)。
 
 ## 来源与许可
 

@@ -1,0 +1,22 @@
+{
+  "method": "Original static front support, root/mesh/limits/distal pad unchanged; only left ring contact6mm toward upper front region to separate it from the other receiving thumb. Not a turn, no C5 curve change.",
+  "previousPoint": [
+    0.019999999999999993,
+    0.014000000000000018,
+    0.0452
+  ],
+  "point": [
+    0.019999999999999993,
+    0.020000000000000018,
+    0.0452
+  ],
+  "angles": [
+    0.2678526310752551,
+    0.025438003863197,
+    0.4353777376080899,
+    0.8883184751425757
+  ],
+  "errorMM": 0.0010681588937749775,
+  "reached": true,
+  "geometry": "pending full and actual triangles"
+}

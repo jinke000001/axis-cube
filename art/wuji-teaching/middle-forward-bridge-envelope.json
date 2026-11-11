@@ -1,0 +1,12 @@
+{
+  "scope": "Specific unloaded M entry bridge upper-envelope,65 actual STL poses; full joined motion/arms/surface/browser still separate.",
+  "assetSHA256": "7cafe14e66ed299fbd191de8abdbcc6171ff4fcf1f75564d593a4a06684d5081",
+  "minRelativeY": -0.159396127356575,
+  "height": 0.565,
+  "clearanceMM": 20,
+  "sourceSHA256": {
+    "scripts/wuji-samples/middle-forward-bridge-envelope.ts": "e9b8a08fb4bb228888811a01d9c6e5574bf5c158857c42ac509020af016a2b3c",
+    "src/wuji-samples/middle-forward.ts": "9120fa3078b7248f0981ed0a2bbd3fc7a4abfaef709c4ada0c4bc65aabdc8d6a",
+    "art/wuji-teaching/compact-handoff-calibration.json": "2a17da2e8112f6e28f8568d5e7f4e9688f0fc7721732309c4a20dfa4c9d3e0b3"
+  }
+}

@@ -1,0 +1,22 @@
+{
+  "scope": "Independent original-range idle index, critical actual STL triangle and9-anchor numeric screened; complete program acceptance separate.",
+  "joints": {
+    "right_finger2_joint1": 0.5,
+    "right_finger2_joint2": 0,
+    "right_finger2_joint3": 1.3,
+    "right_finger2_joint4": 0.5,
+    "right_finger3_joint1": 1.25,
+    "right_finger3_joint2": 0.1,
+    "right_finger3_joint3": 1.3,
+    "right_finger3_joint4": 1.2,
+    "right_finger4_joint1": 1.25,
+    "right_finger4_joint2": -0.1,
+    "right_finger4_joint3": 1.3,
+    "right_finger4_joint4": 1.2,
+    "right_finger5_joint1": 1.25,
+    "right_finger5_joint2": -0.3,
+    "right_finger5_joint3": 1.3,
+    "right_finger5_joint4": 1.2
+  },
+  "evidence": "evidence/wuji-samples/thumb-forward-index-anchors-v2.json"
+}

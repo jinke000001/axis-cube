@@ -1,0 +1,106 @@
+{
+  "passed": true,
+  "scope": "Additional context support at zero wrist: free only index while thumb/middle/ring remain fixed. No support contact or loaded-thumb world transform changed. Self/arm/triangle and complete sequence not yet accepted.",
+  "pose": {
+    "position": [
+      0.06860564399314957,
+      0.39483125597377666,
+      0.1436094035324329
+    ],
+    "quaternion": [
+      -0.10974287835483668,
+      0.9750437538344987,
+      -0.16215968436043843,
+      0.10464423312751767
+    ],
+    "joints": {
+      "right_finger1_joint1": 1.5141347055217524,
+      "right_finger1_joint2": -0.13635884731235914,
+      "right_finger1_joint3": 0.7043998891548873,
+      "right_finger1_joint4": 0.1289251644614416,
+      "right_finger2_joint1": 0.04264754897377904,
+      "right_finger2_joint2": -0.004342584125697602,
+      "right_finger2_joint3": 0.6217989568877965,
+      "right_finger2_joint4": 0.5703544432111085,
+      "right_finger3_joint1": 0.5986504061798266,
+      "right_finger3_joint2": -0.023691279528395035,
+      "right_finger3_joint3": 0.42537984415300845,
+      "right_finger3_joint4": 0.47060560998223316,
+      "right_finger4_joint1": 0.6768434357336747,
+      "right_finger4_joint2": 0.0763614842836633,
+      "right_finger4_joint3": 0.21049264091040604,
+      "right_finger4_joint4": 0.48268785700023836,
+      "right_finger5_joint1": 0.2843718631001145,
+      "right_finger5_joint2": -0.02463286830112338,
+      "right_finger5_joint3": 0.35,
+      "right_finger5_joint4": 0.35
+    }
+  },
+  "contacts": [
+    {
+      "side": "right",
+      "finger": 1,
+      "role": "support",
+      "point": [
+        0.029,
+        -0.013000000000000012,
+        0.0452
+      ],
+      "normal": [
+        0,
+        0,
+        1
+      ],
+      "padOffset": [
+        -0.005093100644929655,
+        -0.004748725858167002,
+        -0.0020154079024753252
+      ]
+    },
+    {
+      "side": "right",
+      "finger": 3,
+      "role": "support",
+      "point": [
+        0.0452,
+        0,
+        -0.012
+      ],
+      "normal": [
+        1,
+        0,
+        0
+      ],
+      "padOffset": [
+        0.0009308700682595371,
+        0.0009596057934687097,
+        0.0014488656306639346
+      ]
+    },
+    {
+      "side": "right",
+      "finger": 4,
+      "role": "support",
+      "point": [
+        0.0452,
+        -0.014000000000000012,
+        -0.006
+      ],
+      "normal": [
+        1,
+        0,
+        0
+      ],
+      "padOffset": [
+        0.0018066480988636682,
+        0.00022398958390112966,
+        0.0010710529750212888
+      ]
+    }
+  ],
+  "area": 0.0002823750343072137,
+  "depthMM": 0.17,
+  "transitionMM": 0,
+  "minDepartXMM": 0.046524867556470284,
+  "freeIndexSkinGapMM": 27.414820615033115
+}

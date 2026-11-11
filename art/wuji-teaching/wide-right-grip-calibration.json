@@ -1,0 +1,120 @@
+{
+  "method": "Original early hand, unchanged limits/distal pads. Thumb contacts moving middle layer x10mm; ring/pinky contact moving outer layer. Left hand holds the stationary left layer.",
+  "diagnostic": "evidence/wuji-samples/wide-right-grip-center-diagnosis.json",
+  "initialWristDxMM": -15,
+  "wristCorrectionMM": [
+    -1.6068048259649994,
+    0.31910570243592895,
+    1.071099361581132
+  ],
+  "pose": {
+    "position": [
+      0.073393195174035,
+      0.34031910570243595,
+      0.14107109936158113
+    ],
+    "quaternion": [
+      0,
+      1,
+      0,
+      0
+    ],
+    "joints": {
+      "right_finger1_joint1": 1.1716790577931717,
+      "right_finger1_joint2": -0.1387,
+      "right_finger1_joint3": 1.041742709469366,
+      "right_finger1_joint4": 0.4894829981505882,
+      "right_finger2_joint1": 0.06,
+      "right_finger2_joint2": 0.3,
+      "right_finger2_joint3": 0.12,
+      "right_finger2_joint4": 0.15,
+      "right_finger3_joint1": 0.06,
+      "right_finger3_joint2": 0,
+      "right_finger3_joint3": 0.12,
+      "right_finger3_joint4": 0.15,
+      "right_finger4_joint1": -0.009832330136107703,
+      "right_finger4_joint2": 0.07277276047248565,
+      "right_finger4_joint3": 0.5814139934322544,
+      "right_finger4_joint4": 1.0670858703315649,
+      "right_finger5_joint1": 0.016825399989064016,
+      "right_finger5_joint2": 0.14960991530649173,
+      "right_finger5_joint3": 0.3631768542689565,
+      "right_finger5_joint4": 1.0919148443732833
+    }
+  },
+  "contacts": [
+    {
+      "finger": 1,
+      "point": [
+        0.01,
+        -0.013000000000000012,
+        0.0452
+      ],
+      "normal": [
+        0,
+        0,
+        1
+      ],
+      "padOffset": [
+        -0.005093100644929655,
+        -0.004748725858167002,
+        -0.0020154079024753252
+      ]
+    },
+    {
+      "finger": 4,
+      "point": [
+        0.0452,
+        -0.014000000000000012,
+        -0.02
+      ],
+      "normal": [
+        1,
+        0,
+        0
+      ],
+      "padOffset": [
+        -0.0019436249749641098,
+        -0.000660789016180056,
+        0.0022733438213263777
+      ]
+    },
+    {
+      "finger": 5,
+      "point": [
+        0.0452,
+        -0.03400000000000003,
+        -0.016
+      ],
+      "normal": [
+        1,
+        0,
+        0
+      ],
+      "padOffset": [
+        -0.0009249885763217802,
+        -0.0011754901666043251,
+        0.0020063973623277707
+      ]
+    }
+  ],
+  "fits": [
+    {
+      "finger": 1,
+      "errorMM": 1.4821483875836084e-14,
+      "reached": true
+    },
+    {
+      "finger": 4,
+      "errorMM": 0.0011850883630303965,
+      "reached": true
+    },
+    {
+      "finger": 5,
+      "errorMM": 0.000761425768023081,
+      "reached": true
+    }
+  ],
+  "contactFitPassed": true,
+  "geometry": "pending"
+}

@@ -1,0 +1,316 @@
+{
+  "version": 10,
+  "prototype": true,
+  "sourceThumbRole": "G1 support, same already-held contact for an adaptive wrist turn",
+  "method": "Prepare contextual G1-derived wrist grip while preserving accepted loaded thumb world pad+terminal direction. Three non-thumb supports are arranged before R; after R only the thumb releases, no whole-hand return to low.",
+  "blendFromOldThumbToG1": 0.85,
+  "loaded": {
+    "pose": {
+      "position": [
+        0.06860564399314957,
+        0.39483125597377666,
+        0.1436094035324329
+      ],
+      "quaternion": [
+        -0.10974287835483668,
+        0.9750437538344987,
+        -0.16215968436043843,
+        0.10464423312751767
+      ],
+      "joints": {
+        "right_finger1_joint1": 1.5141347055217524,
+        "right_finger1_joint2": -0.13635884731235914,
+        "right_finger1_joint3": 0.7043998891548873,
+        "right_finger1_joint4": 0.1289251644614416,
+        "right_finger2_joint1": 0.21513747841037895,
+        "right_finger2_joint2": 0.13444218838406574,
+        "right_finger2_joint3": 1.1553024632125553,
+        "right_finger2_joint4": 1.0228207253775696,
+        "right_finger3_joint1": 0.5986504061798266,
+        "right_finger3_joint2": -0.023691279528395035,
+        "right_finger3_joint3": 0.42537984415300845,
+        "right_finger3_joint4": 0.47060560998223316,
+        "right_finger4_joint1": 0.6768434357336747,
+        "right_finger4_joint2": 0.0763614842836633,
+        "right_finger4_joint3": 0.21049264091040604,
+        "right_finger4_joint4": 0.48268785700023836,
+        "right_finger5_joint1": 0.2843718631001145,
+        "right_finger5_joint2": -0.02463286830112338,
+        "right_finger5_joint3": 0.35,
+        "right_finger5_joint4": 0.35
+      }
+    },
+    "contacts": [
+      {
+        "side": "right",
+        "finger": 1,
+        "role": "drive",
+        "point": [
+          0.029,
+          -0.013000000000000012,
+          0.0452
+        ],
+        "normal": [
+          0,
+          0,
+          1
+        ],
+        "padOffset": [
+          -0.005093100644929655,
+          -0.004748725858167002,
+          -0.0020154079024753252
+        ]
+      },
+      {
+        "side": "right",
+        "finger": 2,
+        "role": "drive",
+        "point": [
+          0.0452,
+          0.02999999999999997,
+          0.005
+        ],
+        "normal": [
+          1,
+          0,
+          0
+        ],
+        "padOffset": [
+          -0.003776921192184088,
+          0.001781627186574042,
+          0.0014558897819369997
+        ]
+      },
+      {
+        "side": "right",
+        "finger": 3,
+        "role": "drive",
+        "point": [
+          0.0452,
+          0,
+          -0.012
+        ],
+        "normal": [
+          1,
+          0,
+          0
+        ],
+        "padOffset": [
+          0.0009308700682595371,
+          0.0009596057934687097,
+          0.0014488656306639346
+        ]
+      },
+      {
+        "side": "right",
+        "finger": 4,
+        "role": "drive",
+        "point": [
+          0.0452,
+          -0.014000000000000012,
+          -0.006
+        ],
+        "normal": [
+          1,
+          0,
+          0
+        ],
+        "padOffset": [
+          0.0018066480988636682,
+          0.00022398958390112966,
+          0.0010710529750212888
+        ]
+      }
+    ],
+    "thumbPadErrorMM": 2.4679451876256557e-13,
+    "thumbOrientationErrorRadians": 1.1920928955078128e-7,
+    "palmOffsetFromG1MM": [
+      6.329209509890729,
+      -8.142234780478375,
+      2.320725116017719
+    ]
+  },
+  "carry": {
+    "pose": {
+      "position": [
+        0.06860564399314957,
+        0.4836094035324329,
+        -0.05483125597377661
+      ],
+      "quaternion": [
+        -0.1515945803281691,
+        0.5747958378436246,
+        -0.8041242627362969,
+        -0.003605286615101691
+      ],
+      "joints": {
+        "right_finger1_joint1": 1.6033,
+        "right_finger1_joint2": -0.1387,
+        "right_finger1_joint3": 0.7043998891548873,
+        "right_finger1_joint4": -0.021074835538558406,
+        "right_finger2_joint1": 0.21513747841037895,
+        "right_finger2_joint2": 0.13444218838406574,
+        "right_finger2_joint3": 1.1553024632125553,
+        "right_finger2_joint4": 1.0228207253775696,
+        "right_finger3_joint1": 0.5986504061798266,
+        "right_finger3_joint2": -0.023691279528395035,
+        "right_finger3_joint3": 0.42537984415300845,
+        "right_finger3_joint4": 0.47060560998223316,
+        "right_finger4_joint1": 0.6768434357336747,
+        "right_finger4_joint2": 0.0763614842836633,
+        "right_finger4_joint3": 0.21049264091040604,
+        "right_finger4_joint4": 0.48268785700023836,
+        "right_finger5_joint1": 0.2843718631001145,
+        "right_finger5_joint2": -0.02463286830112338,
+        "right_finger5_joint3": 0.35,
+        "right_finger5_joint4": 0.35
+      }
+    },
+    "contacts": [
+      {
+        "side": "right",
+        "finger": 2,
+        "role": "support",
+        "point": [
+          0.0452,
+          0.0050000000000000044,
+          -0.029999999999999964
+        ],
+        "normal": [
+          1,
+          0,
+          0
+        ],
+        "padOffset": [
+          -0.003776921192184088,
+          0.001781627186574042,
+          0.0014558897819369997
+        ]
+      },
+      {
+        "side": "right",
+        "finger": 3,
+        "role": "support",
+        "point": [
+          0.0452,
+          -0.012,
+          -1.734723475976807e-18
+        ],
+        "normal": [
+          1,
+          0,
+          0
+        ],
+        "padOffset": [
+          0.0009308700682595371,
+          0.0009596057934687097,
+          0.0014488656306639346
+        ]
+      },
+      {
+        "side": "right",
+        "finger": 4,
+        "role": "support",
+        "point": [
+          0.0452,
+          -0.006,
+          0.014000000000000012
+        ],
+        "normal": [
+          1,
+          0,
+          0
+        ],
+        "padOffset": [
+          0.0018066480988636682,
+          0.00022398958390112966,
+          0.0010710529750212888
+        ]
+      }
+    ],
+    "area": 0.00025299999999999997,
+    "thumbFreeLiftMM": 2.4147422731983226
+  },
+  "measurements": {
+    "staticDepthMM": 0,
+    "carryAndZeroCubeCoarseDepthMM": 0.17,
+    "selfSAT": false
+  },
+  "selected": [
+    {
+      "finger": 2,
+      "angles": [
+        0.21513747841037895,
+        0.13444218838406574,
+        1.1553024632125553,
+        1.0228207253775696
+      ],
+      "error": 8.058197997319523e-8,
+      "reached": true,
+      "iterations": 2,
+      "facing": 0.9996449385947275,
+      "padOffset": [
+        -0.003776921192184088,
+        0.001781627186574042,
+        0.0014558897819369997
+      ],
+      "padOffsetChangeMM": 2.8204924221694547,
+      "point": [
+        0.0452,
+        0.02999999999999997,
+        0.005
+      ],
+      "quality": 1.362985710179746
+    },
+    {
+      "finger": 3,
+      "angles": [
+        0.751534819307716,
+        -0.04860299531799832,
+        0.1897451148652825,
+        0.22489579354457906
+      ],
+      "error": 5.719477623607767e-7,
+      "reached": true,
+      "iterations": 2,
+      "facing": 0.9986793625636076,
+      "padOffset": [
+        0.003384783398360014,
+        0.0008545846212655861,
+        -0.00009846124885370607
+      ],
+      "padOffsetChangeMM": 4.8979380901533665,
+      "point": [
+        0.0452,
+        -0.0040000000000000036,
+        -0.015
+      ],
+      "quality": 0.9368939108978545
+    },
+    {
+      "finger": 4,
+      "angles": [
+        0.6768434357336747,
+        0.0763614842836633,
+        0.21049264091040604,
+        0.48268785700023836
+      ],
+      "error": 1.6041851500502668e-7,
+      "reached": true,
+      "iterations": 2,
+      "facing": 0.9985784011749226,
+      "padOffset": [
+        0.0018066480988636682,
+        0.00022398958390112966,
+        0.0010710529750212888
+      ],
+      "padOffsetChangeMM": 4.017429387470685,
+      "point": [
+        0.0452,
+        -0.014000000000000012,
+        -0.006
+      ],
+      "quality": 0.5836629378230302
+    }
+  ]
+}

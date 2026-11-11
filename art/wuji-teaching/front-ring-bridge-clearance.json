@@ -1,0 +1,13 @@
+{
+  "scope": "Specific free RingF/F-wide entry bridge; one smooth outward X bump fitted to257 real STL vertex projections per variant. Full triangle/arms/browser acceptance separate.",
+  "assetSHA256": "7cafe14e66ed299fbd191de8abdbcc6171ff4fcf1f75564d593a4a06684d5081",
+  "amplitudeXMM": 7.2,
+  "maxRequiredXMM": 2.5764450753034893,
+  "method": "4*t*(1-t), t=smooth(progress); fixed original endpoints, no added layer turn or changed contact/penetration threshold.",
+  "sourceSHA256": {
+    "scripts/wuji-samples/front-ring-bridge-clearance.ts": "f4af9bc3bb871abc91b3cfea07a5ac7acc65facd9ae4ba3c06e29fad744f1d64",
+    "src/wuji-samples/front-ring-handoff-base.ts": "3a02d905d515a1208121cc4380befc4ac650ad29efa26ee08b9b47c4f04d683f",
+    "src/wuji-samples/front-ring-prime.ts": "40f1d220a5fa2639cd54c05c16cbb25930c267e38e6e31d93465035f02c40df3",
+    "src/wuji-samples/wide-front-ring-prime.ts": "41619aae0be471fc2a8bf1506fe2f4c86d00598c6e4789ffe282acf681084b4e"
+  }
+}

@@ -1,0 +1,22 @@
+{
+  "version": 3,
+  "method": "Prepare these two standby fingers before entering U2 and retain them through both strokes, using original local handoff/root and functional index/middle/thumb unchanged. Avoid unsafe interpolation of standby joints mid-relay.",
+  "angles": {
+    "4": [
+      0.2,
+      0,
+      0.45,
+      0.45
+    ],
+    "5": [
+      0.2,
+      0,
+      0.45,
+      0.45
+    ]
+  },
+  "evidence": [
+    "c114-u2-idle-a2-calibration.json",
+    "c114-u2-idle-transition-a3-probe.json"
+  ]
+}

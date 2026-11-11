@@ -1,0 +1,11 @@
+import{Vector3}from'three';import{blendFingerPose,clonePose}from'../scene/finger-data';import{smooth,type HandPose,type Side}from'../scene/motion';import{moveAngle}from'../core/cube';import type{HandoffPart}from'./compact-handoff';import{backHandoff}from'./back-handoff';import{createBackFlickProgram}from'./back-flick';import{createWideBackProgram}from'./wide-back';
+const same=(a:HandPose,b:HandPose)=>a.position.distanceTo(b.position)<1e-8&&a.quaternion.clone().normalize().angleTo(b.quaternion.clone().normalize())<1e-7&&Object.entries(a.joints!).every(([k,v])=>Math.abs(v-b.joints![k])<1e-7),Z=new Vector3(0,0,-1),variants=[false,true].map(prime=>{const original=createBackFlickProgram(prime),wide=createWideBackProgram(prime),turn=original.segments.find(s=>s.stage==='TURN')!;return{original,wide,first:turn.sample(0).contacts.find(c=>c.role==='drive')!,last:turn.sample(1).contacts.find(c=>c.role==='drive')!};});
+/** Reuse the measured C11 free fingertip approach, then shift only the
+ * already-released hover along B's axis to the seam. No crossed wrist orbit. */
+export function wideBackHandoff(side:Side,from:HandPose,to:HandPose,padA:Vector3,padB:Vector3,normalA:Vector3,normalB:Vector3,preferred?:1|2):HandoffPart[]{
+ if(side!=='right')return backHandoff(side,from,to,padA,padB,normalA,normalB,preferred);const parts:HandoffPart[]=[];
+ const canonical=(p:HandPose)=>{const c=clonePose(p);c.quaternion.normalize();return c;};from=canonical(from);to=canonical(to);
+ for(const v of variants)if(same(from,v.wide.sample(v.wide.duration).right)){const a=clonePose(from),b=v.original.sample(v.original.duration).right;parts.push({duration:.4,phase:'指尖已释放 · 离开两层接缝',sample:t=>blendFingerPose(a,b,smooth(t))});from=canonical(b);padA=v.last.padOffset;normalA=v.last.normal.clone().applyAxisAngle(Z,moveAngle(v.original.steps[0].move));preferred=v.last.finger as 1|2;break;}
+ for(const v of variants)if(same(to,v.wide.sample(0).right)){const before=canonical(v.original.sample(0).right);parts.push(...backHandoff(side,from,before,padA,v.first.padOffset,normalA,v.first.normal,v.first.finger as 1|2));parts.push({duration:.4,phase:'指尖悬停 · 准备同时接触两层',sample:t=>blendFingerPose(before,to,smooth(t))});return parts;}
+ if(!same(from,to))parts.push(...backHandoff(side,from,to,padA,padB,normalA,normalB,preferred));return parts;
+}

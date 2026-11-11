@@ -1,6 +1,6 @@
 [build]
-  command = "npm run build"
-  publish = "dist"
+  command = "node scripts/wuji-release/build.mjs"
+  publish = "output/axis-netlify-u8-release-r1/site"
 
 [build.environment]
   NODE_VERSION = "24"

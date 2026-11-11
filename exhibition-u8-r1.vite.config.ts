@@ -1,0 +1,2 @@
+import{defineConfig}from'vite';import{resolve}from'node:path';import base from'./exhibition.vite.config.ts';
+export default defineConfig({...base,plugins:[...(base.plugins??[]),{name:'local-u8-entry',configureServer(server){server.middlewares.use((req,_res,next)=>{if(/^\/(?:solve|library\/cfop)(?:\/|\?|$)/.test(req.url??''))req.url='/exhibition-u8-r1/index.html';next();});}}],server:{...base.server,port:3545,strictPort:true},build:{...base.build,outDir:'output/exhibition-u8-r1',rollupOptions:{input:{exhibition:resolve('exhibition-u8-r1/index.html')}}}});
