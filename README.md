@@ -6,6 +6,8 @@
 
 [打开 AXIS](https://axis-cube-jinke.netlify.app/) · [还原我的魔方](https://axis-cube-jinke.netlify.app/solve) · [版本与验收记录](RELEASES.md)
 
+![AXIS 魔方指法演示器功能与使用说明图](assets/readme/axis-usage-guide.png)
+
 ## 使用方式
 
 - GAN 原表 119 个情形、121 条主/替代公式，保留原始编号、括号分组、重复动作、半圈方向与手指颜色。当前开放全部 121 段演示。
