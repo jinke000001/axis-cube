@@ -1,12 +1,23 @@
-import{build}from'vite';import{readFileSync,writeFileSync,mkdirSync,readdirSync,statSync,existsSync}from'node:fs';import{resolve,dirname}from'node:path';import{createHash}from'node:crypto';import{execFileSync}from'node:child_process';
-const argv=process.argv.slice(2),arg=(k,d)=>argv.includes(k)?argv[argv.indexOf(k)+1]:d,version=arg('--version','axis-u8-r1'),out=resolve(arg('--out','output/axis-netlify-u8-release-r1')),buildDir=out+'/build',site=out+'/site',manifest=out+'/manifest.json',sha=b=>createHash('sha256').update(b).digest('hex');
-if(!out.startsWith(resolve('output')+'/')||/[^a-zA-Z0-9._-]/.test(version))throw Error('Explicit versioned output required');
-const sourceLock = JSON.parse(readFileSync('release/axis-u8-r1-sources.json', 'utf8'));
-const expectedIdentity = version === sourceLock.version ? sourceLock.artifactIdentity : undefined;
+import{build}from'vite';import{cpSync,readFileSync,writeFileSync,mkdirSync,readdirSync,statSync,existsSync}from'node:fs';import{resolve,dirname}from'node:path';import{createHash}from'node:crypto';import{execFileSync}from'node:child_process';
+const argv = process.argv.slice(2);
+const arg = (name, fallback) => argv.includes(name) ? argv[argv.indexOf(name) + 1] : fallback;
+const version = arg('--version', 'axis-u8-r1');
+if (!['axis-u8-r1', 'axis-u9-r1'].includes(version)) throw Error('Unknown frozen release: ' + version);
+const u8 = version === 'axis-u8-r1';
+const slug = u8 ? 'u8-r1' : 'u9-r1';
+const out = resolve(arg('--out', u8 ? 'output/axis-netlify-u8-release-r1' : 'output/axis-netlify-u9-release-r1'));
+const buildDir = out + '/build', site = out + '/site', manifest = out + '/manifest.json';
+const sha = (bytes) => createHash('sha256').update(bytes).digest('hex');
+if (!out.startsWith(resolve('output') + '/')) throw Error('Explicit versioned output required');
+const sourceLock = JSON.parse(readFileSync('release/' + version + '-sources.json', 'utf8'));
+const expectedIdentity = sourceLock.artifactIdentity;
+if (sourceLock.version !== version || !/^[a-f0-9]{64}$/.test(expectedIdentity)) {
+  throw Error('Versioned source lock requires a pinned artifact identity');
+}
 if (existsSync(manifest)) {
   const existing = JSON.parse(readFileSync(manifest, 'utf8'));
   if (existing.version !== version || sha(JSON.stringify(existing.files)) !== existing.identity ||
-      (expectedIdentity && existing.identity !== expectedIdentity)) {
+      existing.identity !== expectedIdentity) {
     throw Error('Existing release manifest does not match the requested version');
   }
   for (const file of existing.files) {
@@ -18,11 +29,25 @@ if (existsSync(manifest)) {
   process.exit(0);
 }
 if(existsSync(out))throw Error('Output already exists without final manifest; use a new output directory');
-const sources = sourceLock.sources;
+const sources = u8 ? sourceLock.sources : {
+  ...sourceLock.sources,
+  'exhibition-u9-r1-inputs': sha(JSON.stringify(sourceLock.files)),
+};
 for (const [path, expected] of Object.entries(sourceLock.files)) {
   if (sha(readFileSync(path)) !== expected) throw Error('Frozen release input changed: ' + path);
 }
-mkdirSync(out,{recursive:true});process.env.AXIS_RELEASE_BUILD_DIR=buildDir;await build({configFile:resolve('release-u8-r1.vite.config.ts')});execFileSync(process.execPath,['scripts/wuji-samples/package-u8.mjs',buildDir],{stdio:'inherit'});mkdirSync(site,{recursive:true});
+mkdirSync(out, { recursive: true });
+process.env.AXIS_RELEASE_BUILD_DIR = buildDir;
+await build({ configFile: resolve('release-' + slug + '.vite.config.ts') });
+if (u8) {
+  execFileSync(process.execPath, ['scripts/wuji-samples/package-u8.mjs', buildDir], { stdio: 'inherit' });
+} else {
+  execFileSync(process.execPath, ['scripts/wuji-samples/package-exhibition.mjs', buildDir, 'exhibition-u9-r1/index.html'], { stdio: 'inherit' });
+  mkdirSync(buildDir + '/vendor', { recursive: true });
+  cpSync('public/vendor/opencv', buildDir + '/vendor/opencv', { recursive: true });
+  cpSync('public/licenses', buildDir + '/licenses', { recursive: true });
+}
+mkdirSync(site, { recursive: true });
 const allowed=/^(?:index\.html|assets\/[\w.-]+\.(?:js|css)|models\/wuji-teaching\/(?:wuji-teaching-hands\.glb|manifest\.json|LICENSE\.txt)|vendor\/opencv\/opencv-4\.13\.0\.js|licenses\/[\w.-]+\.txt|licenses\/opencv-third-party\/[\w.-]+\.txt)$/;
 function collect(dir){for(const name of readdirSync(dir).sort()){if(name.startsWith('._'))continue;const p=dir+'/'+name;if(statSync(p).isDirectory())collect(p);else{const relative=p.slice(buildDir.length+1);if(!allowed.test(relative))continue;const target=site+'/'+relative;mkdirSync(dirname(target),{recursive:true});writeFileSync(target,readFileSync(p));}}}collect(buildDir);
 for(const name of['_headers','_redirects'])writeFileSync(site+'/'+name,readFileSync('release/netlify/'+name));writeFileSync(site+'/axis-mark.svg',readFileSync('public/axis-mark.svg'));
@@ -32,8 +57,11 @@ const core=files(),runtimeIdentity=sha(JSON.stringify(core));writeFileSync(site+
 for(const required of['index.html','_headers','_redirects','axis-mark.svg','release.json','models/wuji-teaching/wuji-teaching-hands.glb','models/wuji-teaching/manifest.json','models/wuji-teaching/LICENSE.txt','vendor/opencv/opencv-4.13.0.js'])if(!all.some(f=>f.path===required))throw Error('Missing runtime '+required);
 for(const prefix of['assets/solver.worker-','assets/vision.worker-'])if(!all.some(f=>f.path.startsWith(prefix)&&f.path.endsWith('.js')))throw Error('Missing worker '+prefix);
 for(const f of all)if(/(?:^|\/)\._|\.map$|\.env|\.blend|(?:^|\/)(?:src|docs|tests|evidence|drafts|\.git|\.netlify)\//.test(f.path))throw Error('Private file in release '+f.path);
-if (expectedIdentity && identity !== expectedIdentity) {
+if (identity !== expectedIdentity) {
   throw Error('Build does not match the published ' + version + ' artifact: ' + identity);
 }
-writeFileSync(manifest,JSON.stringify({version,identity,runtimeIdentity,site,sources,cases:119,demonstrations:inventory.entries.map(e=>({id:e.id,formulaSHA256:e.formulaSHA256})),files:all,changes:['Release HTML title/favicon/description','Available label and formula count footer','Recovery copy removes local-candidate wording','Same-origin security/permissions/cache headers and routes; true404','Runtime and licenses allowlist only'],excluded:['source maps','evidence','photos','test inputs','drafts','source code','AppleDouble','old samples']},null,2)+'\n');
+const changes = u8
+  ? ['Release HTML title/favicon/description','Available label and formula count footer','Recovery copy removes local-candidate wording','Same-origin security/permissions/cache headers and routes; true404','Runtime and licenses allowlist only']
+  : ['Responsive camera, photo import and capture recovery controls','Export and retry from a valid session after motion preparation fails'];
+writeFileSync(manifest,JSON.stringify({version,identity,runtimeIdentity,site,sources,cases:119,demonstrations:inventory.entries.map(e=>({id:e.id,formulaSHA256:e.formulaSHA256})),files:all,changes,excluded:['source maps','evidence','photos','test inputs','drafts','source code','AppleDouble','old samples']},null,2)+'\n');
 console.log(JSON.stringify({version,identity,files:all.length,bytes:all.reduce((n,f)=>n+f.bytes,0),directory:site}));

@@ -1,0 +1,109 @@
+/* The header and controls keep their space. The capture page owns the rest. */
+.solve-capture-modal .capture-page {
+  min-height: 0;
+  min-width: 0;
+}
+
+.solve-capture-modal .solve-capture-feedback,
+.solve-capture-modal .capture-draft-warning {
+  flex: none;
+  position: static;
+  max-height: min(5.5rem, 19svh);
+  overflow: auto;
+  overscroll-behavior: contain;
+  overflow-wrap: anywhere;
+}
+
+.solve-capture-modal .capture-feedback {
+  max-height: min(8rem, 24svh);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.solve-recovery-actions {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.solve-recovery-actions button {
+  min-height: 44px;
+}
+
+@media (max-height: 600px) {
+  .solve-capture-modal .capture-entry {
+    justify-content: flex-start;
+    gap: 12px;
+    padding-block: 12px;
+  }
+
+  .solve-capture-modal .capture-entry-icon {
+    display: none;
+  }
+
+  .solve-capture-modal .capture-entry h3 {
+    font-size: 20px;
+  }
+
+  .solve-capture-modal .capture-entry-actions {
+    gap: 8px;
+  }
+
+  .solve-capture-modal .capture-controls {
+    padding-bottom: max(6px, env(safe-area-inset-bottom));
+  }
+
+  .solve-empty:has(.solve-recovery-actions) {
+    justify-content: safe center;
+    overflow: auto;
+  }
+}
+
+@media (orientation: landscape) and (max-height: 500px) {
+  .solve-capture-modal .capture-workspace[open] {
+    grid-template:
+      "message message" auto
+      "header header" auto
+      "meter controls" auto
+      "page controls" minmax(0, 1fr)
+      "warning warning" auto
+      / minmax(0, 1fr) 180px;
+  }
+
+  .solve-capture-modal .solve-capture-feedback { grid-area: message; }
+  .solve-capture-modal .capture-top { grid-area: header; }
+  .solve-capture-modal .capture-meter { grid-area: meter; }
+  .solve-capture-modal .capture-page { grid-area: page; }
+  .solve-capture-modal .capture-draft-warning { grid-area: warning; }
+
+  .solve-capture-modal .capture-controls {
+    grid-area: controls;
+    min-height: 0;
+    overflow: auto;
+    justify-content: safe center;
+  }
+
+  .solve-capture-modal .capture-entry {
+    grid-row: 3 / 5;
+    grid-column: 1 / -1;
+  }
+
+  .solve-capture-modal .capture-entry-actions {
+    grid-template-columns: repeat(auto-fit, minmax(144px, 1fr));
+  }
+
+  .solve-capture-modal .capture-view-empty {
+    padding: 8px 12px;
+  }
+
+  .solve-capture-modal .capture-view-empty svg {
+    width: 28px;
+    height: 28px;
+    margin-bottom: 4px;
+  }
+
+  .solve-capture-modal .capture-view-empty strong { font-size: 15px; }
+  .solve-capture-modal .capture-view-empty p { margin-top: 4px; }
+}

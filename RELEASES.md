@@ -1,8 +1,30 @@
 # AXIS release checkpoints
 
+## 2026-11-11 · AXIS U9 r1
+
+Mobile capture keeps the camera, shutter, and photo import controls within reach in portrait and landscape. Longer messages can scroll while the controls stay in place. A valid cube state, palette, and solution can be downloaded if motion preparation fails. Retrying uses the retained solution. A newly entered session follows the usual save flow once its motion is ready.
+
+| Release record | Value |
+| --- | --- |
+| Version and Git tag | `axis-u9-r1` |
+| Production deploy | `6af3ed7a8b9473f03eb957d0` |
+| Accepted preview deploy | `6af3ec10e767c5524b1d72d2` |
+| Previous production deploy | `6af3c7841b3aa36b2577957c` |
+| Artifact SHA-256 identity | `56ef96cdfe5544253b0d6062271acf8883ed05ee93631775cd562c43152f3337` |
+| Package | 42 files, 21,017,408 bytes |
+
+[Production](https://axis-cube-jinke.netlify.app/) · [Personal restore](https://axis-cube-jinke.netlify.app/solve) · [Previous production](https://6af3c7841b3aa36b2577957c--axis-cube-jinke.netlify.app)
+
+Targeted independent acceptance covered 390×844, 320×568, and 844×390 Chrome viewports, long messages and camera denial, actual downloads after injected compiler failures, and recovery from retained data. Development checks also exercised simulated camera interruption, retry after a failed recognition worker, and the six-photo flow through one-cell correction and a 63-move solution. The short personal solve, F2L40 single U, and PLL01 double flick played in the fixed HTTPS preview.
+
+Production verification matched 40 served files and 131 routes. The formal domain passed resumed capture, camera denial, short personal playback, F2L40, and preservation of six existing records in an isolated profile. The build uses the accepted white Wuji hand, C5, C114 motion, and 119 cases with 121 demonstrations. The [U9 input manifest](release/axis-u9-r1-sources.json) pins the exact shipped artifact. A clean source export reproduced both U9 and U8, passed TypeScript and four focused recovery tests.
+
+The previous Netlify deployment remains available as the rollback target. Real iPhone Safari capture, photo library import, landscape use, and return from an interrupted camera session are pending device validation.
+
+
 ## 2026-11-11 · AXIS U8 r1
 
-C114 r1 and U8 r1 are live on the existing Netlify site. The release includes 119 cases, 121 mechanical fingering demonstrations and personal cube restoration from six photos. The white Wuji hand and the original formula notation and fingering annotations carry through to the current exhibition.
+C114 r1 and U8 r1 were published on the existing Netlify site. The release includes 119 cases, 121 mechanical fingering demonstrations and personal cube restoration from six photos. The white Wuji hand and the original formula notation and fingering annotations carry through to the current exhibition.
 
 | Release record | Value |
 | --- | --- |

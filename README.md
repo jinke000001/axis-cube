@@ -2,7 +2,7 @@
 
 在固定的机械展台上，按原表公式观察双手机械指法。选择情形、核对拿法，再慢放、逐步观察或循环动作组。
 
-**C114 r1／U8 r1 已上线。** 公式库开放 119 个情形和 121 段机械指法演示，保留主公式、替代式及原表指法。个人复原支持拍照或导入六面照片、核对颜色和观看白色机械手复原。
+**AXIS U9 r1 手机可用性修复版已上线。** 公式库开放 119 个情形和 121 段机械指法演示，保留主公式、替代式及原表指法。个人复原支持拍照或导入六面照片、核对颜色和观看白色机械手复原。
 
 [打开 AXIS](https://axis-cube-jinke.netlify.app/) · [还原我的魔方](https://axis-cube-jinke.netlify.app/solve) · [版本与验收记录](RELEASES.md)
 
@@ -19,33 +19,35 @@
 
 ## 本地运行
 
-使用 Node.js 24。安装依赖、构建 U8 正式网页并启动静态预览。
+使用 Node.js 24。安装依赖、构建 U9 网页并启动静态预览。
 
 ```sh
 npm ci
-node scripts/wuji-release/build.mjs
-npm exec -- vite preview --config release-u8-r1.vite.config.ts --outDir output/axis-netlify-u8-release-r1/site --host 127.0.0.1 --port 4173 --strictPort
+node scripts/wuji-release/build.mjs --version axis-u9-r1
+npm exec -- vite preview --config release-u9-r1.vite.config.ts --outDir output/axis-netlify-u9-release-r1/site --host 127.0.0.1 --port 4173 --strictPort
 ```
 
 [本地公式库](http://127.0.0.1:4173/) · [本地个人复原](http://127.0.0.1:4173/solve)
+
+如需复现上一版，在干净目录执行 `node scripts/wuji-release/build.mjs --version axis-u8-r1`，独立输出位于 `output/axis-netlify-u8-release-r1`。
 
 公式深链接示例为 `/library/cfop/gan-f2l-40`。PLL 01 和 PLL 02 的替代式使用 `?variant=1`。
 
 ## 验证与目录
 
 ```sh
-npm exec -- vitest run src/wuji-samples/grip-library-c114.test.ts src/wuji-samples/grip-c114.test.ts
+npm exec -- vitest run src/wuji-solve-u9-r1/flow.test.ts
 ```
 
-- `src/wuji-exhibition-u8-r1/` 提供公式库和个人复原展台，`src/wuji-solve-c114/` 将求解输出接入 C114 动作。
+- `src/wuji-exhibition-u9-r1/` 提供当前展台和手机录入布局，`src/wuji-solve-u9-r1/` 管理合法局面、动作生成及失败后的重试。展台沿用 U8 的公式与 C114 的动作。
 - `src/wuji-samples/` 和 `art/wuji-teaching/` 包含握姿、指尖侧拨、动作编排和校准数据。
 - `public/models/wuji-teaching/` 包含网页使用的白色机械手 GLB、模型说明和许可。
 - `src/core/`、`src/wuji-solve-v1/` 和 `vendor/` 提供照片识别、魔方状态与 CFOP 求解。
-- `release/axis-u8-r1-sources.json` 固定构建输入的校验值和正式产物身份。
+- `release/axis-u9-r1-sources.json` 与 U8 对应的输入清单分别固定两版构建与产物身份。
 
 ## 部署
 
-`netlify.toml` 使用 Node.js 24，构建命令与上面的 U8 本地构建相同，发布目录为 `output/axis-netlify-u8-release-r1/site`。构建校验源码输入与正式发布产物，逐文件清单位于发布目录的上一级。`scripts/wuji-release/prepare.mjs` 按清单导出发布文件，`scripts/wuji-release/check.mjs` 核对线上文件、路由与响应头。
+`netlify.toml` 使用 Node.js 24，构建命令与上面的 U9 本地构建相同，发布目录为 `output/axis-netlify-u9-release-r1/site`。构建校验源码输入与正式发布产物，逐文件清单位于发布目录的上一级。`scripts/wuji-release/prepare.mjs` 按清单导出发布文件，`scripts/wuji-release/check.mjs` 核对线上文件、路由与响应头。
 
 正式部署、回退编号、实测范围及真机待验项见 [版本与验收记录](RELEASES.md)。
 
