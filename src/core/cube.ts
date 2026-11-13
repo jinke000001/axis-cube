@@ -266,30 +266,15 @@ const edgeColors = [
 ];
 const parity = (a: number[]) =>
   a.reduce((n, v, i) => n + a.slice(i + 1).filter((x) => x < v).length, 0) % 2;
-export function validateFacelets(
-  s: string,
-  palette = DEFAULT_PALETTE,
-): Validation {
-  const fail = (message: string, indices: number[] = []): Validation => ({
-    valid: false,
-    message,
-    indices,
-  });
-  if (s.length !== 54 || /[^URFDLB]/.test(s))
-    return fail("请为六个面填满 54 个色块。");
-  for (const f of FACES) {
-    const n = [...s].filter((c) => c === f).length;
-    if (n !== 9)
-      return fail(
-        COLOR_NAMES[palette[f]] + "色有 " + n + " 格，需要 9 格。",
-        [...s].flatMap((c, i) => (c === f ? [i] : [])),
-      );
-  }
+
+function checkFaceletsGeometry(s: string): {
+  valid: boolean;
+  kind?: "center" | "corner" | "edge" | "twist" | "flip" | "parity";
+  indices: number[];
+} {
   for (let i = 0; i < 6; i++)
     if (s[i * 9 + 4] !== FACES[i])
-      return fail("中心颜色与面方向不一致，请检查六面的对应关系。", [
-        i * 9 + 4,
-      ]);
+      return { valid: false, kind: "center", indices: [i * 9 + 4] };
   const cp: number[] = [],
     co: number[] = [],
     ep: number[] = [],
@@ -297,14 +282,23 @@ export function validateFacelets(
   for (const indices of corners) {
     const colors = indices.map((i) => s[i]);
     const ori = colors.findIndex((c) => c === "U" || c === "D");
-    const id = cornerColors.findIndex(
-      (c) =>
-        c[0] === colors[ori] &&
-        c[1] === colors[(ori + 1) % 3] &&
-        c[2] === colors[(ori + 2) % 3],
-    );
-    if (ori < 0 || id < 0 || cp.includes(id))
-      return fail("角块颜色组合或面朝向不正确，请核对高亮位置。", indices);
+    const id =
+      ori < 0
+        ? -1
+        : cornerColors.findIndex(
+            (c) =>
+              c[0] === colors[ori] &&
+              c[1] === colors[(ori + 1) % 3] &&
+              c[2] === colors[(ori + 2) % 3],
+          );
+    if (ori < 0 || id < 0 || cp.includes(id)) {
+      const prev = cp.indexOf(id);
+      return {
+        valid: false,
+        kind: "corner",
+        indices: prev >= 0 ? [...corners[prev], ...indices] : indices,
+      };
+    }
     cp.push(id);
     co.push(ori);
   }
@@ -316,19 +310,171 @@ export function validateFacelets(
       id = edgeColors.indexOf(colors[1] + colors[0]);
       ori = 1;
     }
-    if (id < 0 || ep.includes(id))
-      return fail("棱块颜色组合重复或不正确，请核对高亮位置。", indices);
+    if (id < 0 || ep.includes(id)) {
+      const prev = ep.indexOf(id);
+      return {
+        valid: false,
+        kind: "edge",
+        indices: prev >= 0 ? [...edges[prev], ...indices] : indices,
+      };
+    }
     ep.push(id);
     eo.push(ori);
   }
-  if (co.reduce((a, b) => a + b, 0) % 3)
-    return fail("角块方向不合法：可能有角块被扭转，或照片方向有误。");
-  if (eo.reduce((a, b) => a + b, 0) % 2)
-    return fail("棱块方向不合法：可能有棱块被翻转，或识别有误。");
-  if (parity(cp) !== parity(ep))
+  if (co.reduce((a, b) => a + b, 0) % 3) {
+    const twisted = corners.filter((_, i) => co[i] !== 0).flat();
+    return {
+      valid: false,
+      kind: "twist",
+      indices: twisted.length ? twisted : [...corners[0]],
+    };
+  }
+  if (eo.reduce((a, b) => a + b, 0) % 2) {
+    const flipped = edges.filter((_, i) => eo[i] !== 0).flat();
+    return {
+      valid: false,
+      kind: "flip",
+      indices: flipped.length ? flipped : [...edges[0]],
+    };
+  }
+  if (parity(cp) !== parity(ep)) {
+    const displacedEdges = edges.filter((_, i) => ep[i] !== i).flat();
+    const displacedCorners = corners.filter((_, i) => cp[i] !== i).flat();
+    const suspects =
+      displacedEdges.length > 0 &&
+      (displacedCorners.length === 0 ||
+        displacedEdges.length <= displacedCorners.length)
+        ? displacedEdges
+        : displacedCorners.length > 0
+          ? displacedCorners
+          : [...edges[0], ...edges[1]];
+    return { valid: false, kind: "parity", indices: suspects };
+  }
+  return { valid: true, indices: [] };
+}
+
+function pinpointCountMismatchIndices(s: string, counts: Record<Face, number>): number[] {
+  const overFaces = FACES.filter((f) => counts[f] > 9);
+  const underFaces = FACES.filter((f) => counts[f] < 9);
+  if (overFaces.length === 1 && underFaces.length === 1) {
+    const over = overFaces[0];
+    const under = underFaces[0];
+    if (counts[over] === 10 && counts[under] === 8) {
+      const exactFixes: number[] = [];
+      for (let i = 0; i < 54; i++) {
+        if (i % 9 === 4 || s[i] !== over) continue;
+        const candidate = s.slice(0, i) + under + s.slice(i + 1);
+        if (checkFaceletsGeometry(candidate).valid) exactFixes.push(i);
+      }
+      if (exactFixes.length > 0) return exactFixes;
+    }
+  }
+  const overSet = new Set<string>(overFaces);
+  const badCubieStickers = new Set<number>();
+  const cornerIdCounts = new Map<number, number[]>();
+  for (const indices of corners) {
+    const colors = indices.map((i) => s[i]);
+    const ori = colors.findIndex((c) => c === "U" || c === "D");
+    const id =
+      ori < 0
+        ? -1
+        : cornerColors.findIndex(
+            (c) =>
+              c[0] === colors[ori] &&
+              c[1] === colors[(ori + 1) % 3] &&
+              c[2] === colors[(ori + 2) % 3],
+          );
+    if (ori < 0 || id < 0) {
+      indices.forEach((idx) => {
+        if (idx % 9 !== 4 && overSet.has(s[idx])) badCubieStickers.add(idx);
+      });
+    } else {
+      cornerIdCounts.set(id, [...(cornerIdCounts.get(id) ?? []), ...indices]);
+    }
+  }
+  for (const indices of cornerIdCounts.values()) {
+    if (indices.length > 3) {
+      indices.forEach((idx) => {
+        if (idx % 9 !== 4 && overSet.has(s[idx])) badCubieStickers.add(idx);
+      });
+    }
+  }
+  const edgeIdCounts = new Map<number, number[]>();
+  for (const indices of edges) {
+    const colors = indices.map((i) => s[i]).join("");
+    let id = edgeColors.indexOf(colors);
+    if (id < 0) id = edgeColors.indexOf(colors[1] + colors[0]);
+    if (id < 0) {
+      indices.forEach((idx) => {
+        if (idx % 9 !== 4 && overSet.has(s[idx])) badCubieStickers.add(idx);
+      });
+    } else {
+      edgeIdCounts.set(id, [...(edgeIdCounts.get(id) ?? []), ...indices]);
+    }
+  }
+  for (const indices of edgeIdCounts.values()) {
+    if (indices.length > 2) {
+      indices.forEach((idx) => {
+        if (idx % 9 !== 4 && overSet.has(s[idx])) badCubieStickers.add(idx);
+      });
+    }
+  }
+  if (badCubieStickers.size > 0) return [...badCubieStickers];
+  const targetFace = overFaces[0] ?? FACES.find((f) => counts[f] !== 9)!;
+  return [...s].flatMap((c, i) => (c === targetFace ? [i] : []));
+}
+
+export function validateFacelets(
+  s: string,
+  palette = DEFAULT_PALETTE,
+): Validation {
+  const fail = (message: string, indices: number[] = []): Validation => ({
+    valid: false,
+    message,
+    indices,
+  });
+  if (s.length !== 54 || /[^URFDLB]/.test(s))
+    return fail("请为六个面填满 54 个色块。");
+  const counts = Object.fromEntries(
+    FACES.map((f) => [f, [...s].filter((c) => c === f).length]),
+  ) as Record<Face, number>;
+  for (const f of FACES) {
+    const n = counts[f];
+    if (n !== 9)
+      return fail(
+        COLOR_NAMES[palette[f]] + "色有 " + n + " 格，需要 9 格。",
+        pinpointCountMismatchIndices(s, counts),
+      );
+  }
+  const geo = checkFaceletsGeometry(s);
+  if (!geo.valid) {
+    if (geo.kind === "center")
+      return fail(
+        "中心颜色与面方向不一致，请检查六面的对应关系。",
+        geo.indices,
+      );
+    if (geo.kind === "corner")
+      return fail("角块颜色组合或面朝向不正确，请核对高亮位置。", geo.indices);
+    if (geo.kind === "edge")
+      return fail(
+        "棱块颜色组合重复或不正确，请核对高亮位置。",
+        geo.indices,
+      );
+    if (geo.kind === "twist")
+      return fail(
+        "角块方向不合法：可能有角块被扭转，或照片方向有误。",
+        geo.indices,
+      );
+    if (geo.kind === "flip")
+      return fail(
+        "棱块方向不合法：可能有棱块被翻转，或识别有误。",
+        geo.indices,
+      );
     return fail(
       "块的排列无法通过正常转动还原，请检查颜色、面朝向或是否拆装过魔方。",
+      geo.indices,
     );
+  }
   return {
     valid: true,
     message:

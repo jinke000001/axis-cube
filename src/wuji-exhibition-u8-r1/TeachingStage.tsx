@@ -7,26 +7,29 @@ import{snapshots,DEFAULT_PALETTE,type Palette}from'../core/cube';
 import type{DemonstratorHandle,FormulaRecord}from'../demonstrator/types';
 import type{TeachingStageProps as BaseProps}from'../demonstrator/TeachingStage';
 import type{RestoreSource}from'../wuji-solve-v1/input';
-interface TeachingStageProps extends BaseProps{personal:boolean;restore:RestoreSource|null;onView?:(view:'solver'|'side'|'back')=>void;}
+import type{CubeFocusMode}from'../scene/cube-model';
+export type StageLoopMode='off'|'group'|'step'|'all';
+export type StageFollowMode='off'|'step'|'group';
+interface TeachingStageProps extends BaseProps{personal:boolean;restore:RestoreSource|null;onView?:(view:'solver'|'side'|'back')=>void;loopMode?:StageLoopMode;followMode?:StageFollowMode;focusTarget?:boolean;autoCamera?:boolean;}
 type Source=Pick<FormulaRecord,'id'|'steps'|'groups'|'initialState'>;
-class PaletteView extends WujiSampleView{palette:Palette=DEFAULT_PALETTE;override update(...args:Parameters<WujiSampleView['update']>){super.update(...args);const[frame,state,move]=args;this.cube.update(state,this.palette,frame.orientation,move,frame.angle);}}
+class PaletteView extends WujiSampleView{palette:Palette=DEFAULT_PALETTE;focusMode:CubeFocusMode='off';override update(...args:Parameters<WujiSampleView['update']>){super.update(...args);const[frame,state,move]=args;this.cube.update(state,this.palette,frame.orientation,move,frame.angle,this.focusMode);}}
 import type{FingerProgram}from'../scene/finger-program';
 import{WujiSampleView}from'../wuji-samples/view';
 import{isDemonstrationAvailable}from'./availability';
 import{createApprovedProgram,sourceBoundary}from'./program';
-interface Runtime extends DemonstratorHandle{select(f:FormulaRecord,personal:boolean,restore:RestoreSource|null):void;ghost(v:boolean):void;dispose():void;setPlaybackOptions(speed:number,loopGroup:number|null):void;}
+interface Runtime extends DemonstratorHandle{select(f:FormulaRecord,personal:boolean,restore:RestoreSource|null):void;ghost(v:boolean):void;setFocus(mode:CubeFocusMode):void;setAutoCamera(v:boolean):void;dispose():void;setPlaybackOptions(speed:number,loopGroup:number|null,loopMode?:StageLoopMode,followMode?:StageFollowMode):void;}
 const fingerNames=['','拇指','食指','中指','无名指','小指'];
-const phaseNames:Record<string,string>={TRANSFER:'换握',CONTACT:'接触',TURN:'转层',RELEASE:'释放',HOLD:'稳持',APPROACH:'接近'};
+const phaseNames:Record<string,string>={TRANSFER:'换握',CONTACT:'接触',TURN:'转层',RELEASE:'释放',HOLD:'稳持',APPROACH:'接近',PREPARE:'准备'};
 const TeachingStage=forwardRef<DemonstratorHandle,TeachingStageProps>(function NewHandStage(props,ref){
  const host=useRef<HTMLDivElement>(null),runtime=useRef<Runtime|null>(null),latest=useRef(props);latest.current=props;
  const[ready,setReady]=useState(false),[failure,setFailure]=useState('');
- useImperativeHandle(ref,()=>({play:()=>runtime.current?.play(),pause:()=>runtime.current?.pause(),seek:i=>runtime.current?.seek(i),resetView:()=>runtime.current?.resetView(),setView:v=>runtime.current?.setView(v)}),[]);
+ useImperativeHandle(ref,()=>({play:()=>runtime.current?.play(),pause:()=>runtime.current?.pause(),seek:i=>runtime.current?.seek(i),seekTime:t=>runtime.current?.seekTime?.(t),resetView:()=>runtime.current?.resetView(),setView:v=>runtime.current?.setView(v)}),[]);
  useEffect(()=>{
   const element=host.current;if(!element)return;
   let view:PaletteView;
   try{view=new PaletteView(element);view.renderer.domElement.style.width='100%';view.renderer.domElement.style.height='100%';}catch{const error='这台设备暂时无法显示三维画面。识别图与原表仍可查看。';setFailure(error);latest.current.onStatus({ready:false,playing:false,completed:0,active:0,phase:'三维不可用',finger:'',instruction:'',error});return;}
   let selected:Source=latest.current.formula,personal=false,empty=false,sourceKey="",program:FingerProgram|undefined,states:string[]=[],time=0,playing=false,loaded=false,disposed=false,dirty=true,last=performance.now(),frameId=0,generation=0,renderCount=0,lastEmit=0,error='',viewName:'solver'|'side'|'back'='solver',fittedFront=false,fittedLeft=false,fittedForwardTop=false,fittedMiddleWhole=false,fittedMiddleTip=false,fittedRing=false,fittedLower=false,fittedBack:false|'upper'|'lower'=false;
-  let playbackSpeed=latest.current.speed,playbackLoop:number|null=null,loopCycles=0,lastDelta=0;
+  let playbackSpeed=latest.current.speed,playbackLoop:number|null=null,playbackLoopMode:StageLoopMode='off',playbackFollowMode:StageFollowMode='off',autoCamera=!!latest.current.autoCamera,lastAutoStep=-1,loopCycles=0,lastDelta=0,stopTarget:number|null=null;
   const cache=new Map<string,{key:string,time:number,view:'solver'|'side'|'back',camera:number[],target:number[],fov:number,loop:number|null}>();
   const available=()=>!empty&&(personal||isDemonstrationAvailable(selected.id));
   const canPlay=()=>loaded&&!!program&&!error&&available();
@@ -35,7 +38,8 @@ const TeachingStage=forwardRef<DemonstratorHandle,TeachingStageProps>(function N
    if(disposed||(!force&&performance.now()-lastEmit<70))return;lastEmit=performance.now();
    const f=currentFrame(),n=selected.steps.length,active=f?Math.min(f.index,n):0,availableNow=available(),ok=canPlay();setReady(ok);setFailure(error);
    const digit=f?.activeFinger,side=f?.active==='left'?'左':'右';
-   latest.current.onStatus({ready:ok,playing:ok&&playing,completed:active,active,phase:error?'暂不可播放':empty?'等待录入':!availableNow?'演示校准中':!loaded?'准备动作':phaseNames[f?.stage??'']??'准备',instruction:empty?'拍摄或导入六个面，再生成真实复原演示。':!availableNow?'可先查看识别图、拿法与原表公式。':f?motionWording(f.phase,program?.steps[f.index]?.move)+(selected.steps[f.index]?.hint?.finger==='thumb'&&selected.steps[f.index]?.move.notation==='U'?' · 背面视角看后侧。':selected.steps[f.index]?.hint?.finger==='thumb'&&selected.steps[f.index]?.move.notation==='F'?' · 侧面视角看上侧。':selected.steps[f.index]?.move.notation==='M'?' · 接触时切侧面看末节近景。':selected.steps[f.index]?.move.kind==='wide'&&['B','D'].includes(selected.steps[f.index].move.face)?' · 当前步骤切侧面看末节与释放。':selected.steps[f.index]?.hint?.finger==='ring'&&selected.steps[f.index]?.move.face==='F'?' · 当前步骤切侧面看下侧。':''):'正在载入早期机械手',finger:f?.active?side+'手'+(digit?fingerNames[digit]:f?.stage==='TURN'?'转腕':'换握'):'',...(error?{error}:{})});
+   const boundaries=program?program.steps.map(s=>s.start):[];
+   latest.current.onStatus({ready:ok,playing:ok&&playing,completed:active,active,phase:error?'暂不可播放':empty?'等待录入':!availableNow?'演示校准中':!loaded?'准备动作':phaseNames[f?.stage??'']??'准备',stageCode:f?.stage??'HOLD',time,duration:program?.duration??0,stepBoundaries:boundaries,instruction:empty?'拍摄或导入六个面，再生成真实复原演示。':!availableNow?'可先查看识别图、拿法与原表公式。':f?motionWording(f.phase,program?.steps[f.index]?.move)+(selected.steps[f.index]?.hint?.finger==='thumb'&&selected.steps[f.index]?.move.notation==='U'?' · 背面视角看后侧。':selected.steps[f.index]?.hint?.finger==='thumb'&&selected.steps[f.index]?.move.notation==='F'?' · 侧面视角看上侧。':selected.steps[f.index]?.move.notation==='M'?' · 接触时切侧面看末节近景。':selected.steps[f.index]?.move.kind==='wide'&&['B','D'].includes(selected.steps[f.index].move.face)?' · 当前步骤切侧面看末节与释放。':selected.steps[f.index]?.hint?.finger==='ring'&&selected.steps[f.index]?.move.face==='F'?' · 当前步骤切侧面看下侧。':''):'正在载入早期机械手',finger:f?.active?side+'手'+(digit?fingerNames[digit]:f?.stage==='TURN'?'转腕':'换握'):'',...(error?{error}:{})});
   };
   const handsVisible=(show:boolean)=>{for(const child of view.scene.children)if(child instanceof Group&&child!==view.cube.root)child.visible=show;};
   const fit=()=>{
@@ -75,27 +79,76 @@ const TeachingStage=forwardRef<DemonstratorHandle,TeachingStageProps>(function N
    }
    if(personal&&name==='side'&&move?.face==='D'){view.camera.position.set(.16,.22,-.32);view.controls.target.set(0,.33,0);view.controls.update();}
    if(personal&&name==='side'&&move?.face==='U'){view.camera.position.set(.16,.49,-.34);view.controls.target.set(0,.355,0);view.controls.update();}
-   fitNormal();dirty=true;latest.current.onView?.(name);
+   fitNormal();dirty=true;wake();latest.current.onView?.(name);
   };
   const draw=()=>{
    const f=currentFrame();fit();handsVisible(canPlay());
    if(f&&loaded&&program){const i=Math.min(f.index,program.steps.length);view.update(f,states[i],f.complete?undefined:program.steps[i].move);}
-   else view.cube.update(selected.initialState,view.palette,new Quaternion());
+   else view.cube.update(selected.initialState,view.palette,new Quaternion(),undefined,0,view.focusMode);
    view.cube.root.visible=!empty;view.render();renderCount++;
    element.dataset.mode=personal?'personal':'cfop';element.dataset.sourceKey=sourceKey;element.dataset.palette=JSON.stringify(view.palette);element.dataset.duration=String(program?.duration??0);element.dataset.time=String(time);element.dataset.speed=String(playbackSpeed);element.dataset.loopCycles=String(loopCycles);element.dataset.lastDelta=String(lastDelta);element.dataset.view=viewName;element.dataset.formula=selected.id;element.dataset.step=String(f?Math.min(f.index,selected.steps.length):0);element.dataset.state=f?states[Math.min(f.index,states.length-1)]:selected.initialState;element.dataset.angle=String(f?.angle??0);element.dataset.phase=f?.stage??'CALIBRATING';element.dataset.playing=String(playing&&canPlay());element.dataset.availability=canPlay()?'available':available()?'loading':'calibrating';element.dataset.contexts='1';element.dataset.generation=String(generation);element.dataset.renderCount=String(renderCount);element.dataset.camera=JSON.stringify([...view.camera.matrixWorld.elements,...view.camera.projectionMatrix.elements]);
    if(f)element.dataset.pose=JSON.stringify(['left','right'].map(s=>{const p=f[s as 'left'|'right'];return[p.position.toArray(),p.quaternion.toArray(),p.joints];}));else delete element.dataset.pose;
    dirty=false;
   };
+  const checkAutoCamera=()=>{
+   if(!autoCamera||!program||!selected.steps.length)return;
+   const f=currentFrame();if(!f||f.complete)return;
+   const step=Math.min(f.index,selected.steps.length-1);
+   if(step===lastAutoStep)return;
+   lastAutoStep=step;
+   const s=selected.steps[step],m=s?.move;
+   if(!m)return;
+   const targetView:'solver'|'side'|'back'=
+    s.hint?.finger==='thumb'&&m.notation==='U'?'back':
+    m.notation==='M'||m.notation==="M'"||(m.kind==='wide'&&['B','D'].includes(m.face))||m.face==='B'||m.face==='D'||(m.face==='F'&&(s.hint?.finger==='thumb'||s.hint?.finger==='ring'||personal))?'side':
+    personal?'solver':openingView(latest.current.formula);
+   if(targetView!==viewName)applyView(targetView);
+  };
+  const activeLoopRange=()=>{
+   if(!program)return undefined;
+   if(playbackLoop!==null){
+    const g=selected.groups.find(g=>g.index===playbackLoop);
+    if(g&&g.end>g.start)return{start:sourceBoundary(program,g.start),end:sourceBoundary(program,g.end)};
+   }
+   if(playbackLoopMode==='step'&&selected.steps.length>0){
+    const f=currentFrame(),idx=Math.min(f?.index??0,selected.steps.length-1);
+    const s=sourceBoundary(program,idx),e=sourceBoundary(program,idx+1);
+    if(e>s)return{start:s,end:e};
+   }
+   if(playbackLoopMode==='all'&&program.duration>0)return{start:0,end:program.duration};
+   return undefined;
+  };
+  const computeStopTarget=()=>{
+   if(!program||!selected.steps.length||activeLoopRange())return null;
+   const f=currentFrame(),idx=Math.min(f?.index??0,selected.steps.length-1);
+   if(playbackFollowMode==='step'){
+    return sourceBoundary(program,idx+1);
+   }
+   if(playbackFollowMode==='group'){
+    const gIdx=selected.steps[idx]?.group??0;
+    const g=selected.groups.find(g=>g.index===gIdx);
+    return sourceBoundary(program,g?g.end:idx+1);
+   }
+   return null;
+  };
   const advanceTo=(now:number)=>{
    const delta=Math.max(0,(now-last)/1000);last=now;lastDelta=delta;
    if(!playing||!program||!canPlay())return;
-   const g=selected.groups.find(g=>g.index===playbackLoop);
-   const next=advancePlayback(time,delta,playbackSpeed,program.duration,g?{start:sourceBoundary(program,g.start),end:sourceBoundary(program,g.end)}:undefined);
-   time=next.time;playing=next.playing;loopCycles+=next.cycles;dirty=true;emit(!playing||next.cycles>0);
+   const loopRange=activeLoopRange();
+   const next=advancePlayback(time,delta,playbackSpeed,program.duration,loopRange,loopRange?null:stopTarget);
+   time=next.time;playing=next.playing;if(!playing)stopTarget=null;loopCycles+=next.cycles;dirty=true;checkAutoCamera();emit(!playing||next.cycles>0);
   };
-  const pause=()=>{advanceTo(performance.now());playing=false;dirty=true;emit(true);};
-  const change=()=>{dirty=true;};view.controls.addEventListener('change',change);
-  const resize=new ResizeObserver(()=>{fitNormal();dirty=true;});resize.observe(element);
+  function animate(now:number){
+   frameId=0;
+   if(disposed)return;
+   advanceTo(now);
+   if(dirty){try{draw();}catch{error='三维演示暂时中断，请重新加载后继续。';playing=false;dirty=false;emit(true);}}
+   if(playing||dirty)frameId=requestAnimationFrame(animate);
+  }
+  const wake=()=>{if(!disposed&&!frameId){last=performance.now();frameId=requestAnimationFrame(animate);}};
+  const pause=()=>{advanceTo(performance.now());playing=false;stopTarget=null;dirty=true;wake();emit(true);};
+  const change=()=>{dirty=true;wake();};view.controls.addEventListener('change',change);
+  const resize=new ResizeObserver(()=>{fitNormal();dirty=true;wake();});resize.observe(element);
   const hidden=()=>{if(document.hidden)pause();};document.addEventListener('visibilitychange',hidden);window.addEventListener('axis:app-pause',pause);
   const contextLost=(e:Event)=>{e.preventDefault();error='三维画面暂时中断，请重新加载。原表资料仍保留。';pause();};view.renderer.domElement.addEventListener('webglcontextlost',contextLost);
   const controller:Runtime={
@@ -103,28 +156,30 @@ const TeachingStage=forwardRef<DemonstratorHandle,TeachingStageProps>(function N
     const key=own?(restore?.key??'empty'):f.id;if(sourceKey===key&&personal===own)return;
     if(sourceKey)cache.set(personal?'personal':'cfop',{key:sourceKey,time,view:viewName,camera:view.camera.position.toArray(),target:view.controls.target.toArray(),fov:view.camera.fov,loop:playbackLoop});
     generation++;personal=own;empty=own&&!restore;sourceKey=key;selected=own&&restore?restore:f;view.palette=own&&restore?restore.palette:DEFAULT_PALETTE;
-    view.cube.root.visible=false;time=0;playing=false;playbackLoop=null;loopCycles=0;last=performance.now();program=undefined;states=[];error='';handsVisible(false);dirty=true;
+    view.cube.root.visible=false;time=0;playing=false;stopTarget=null;lastAutoStep=-1;playbackLoop=null;loopCycles=0;last=performance.now();program=undefined;states=[];error='';handsVisible(false);dirty=true;
     try{if(own&&restore){program=restore.program;states=[...restore.states];}else if(!own&&isDemonstrationAvailable(f.id)){program=createApprovedProgram(f.id);if(program.steps.length!==f.steps.length||program.steps.some((s,i)=>JSON.stringify(s.move)!==JSON.stringify(f.steps[i].move)))throw new Error('原表步骤与动作不一致');states=snapshots(f.initialState,f.steps.map(s=>s.move));}}
     catch{program=undefined;error='动作资料未能加载，已停止机械播放；输入资料保留。';}
     const saved=cache.get(own?'personal':'cfop');applyView(own?'solver':openingView(f));
     if(saved?.key===key){time=saved.time;playbackLoop=null;applyView(saved.view);view.camera.position.fromArray(saved.camera);view.controls.target.fromArray(saved.target);view.camera.fov=saved.fov;view.camera.updateProjectionMatrix();view.controls.update();}
-    emit(true);
+    wake();emit(true);
    },
-   play(){if(!canPlay()||!program)return;const g=selected.groups.find(g=>g.index===playbackLoop);if(g&&(time<sourceBoundary(program,g.start)||time>=sourceBoundary(program,g.end)))time=sourceBoundary(program,g.start);if(time>=program.duration)time=0;playing=true;last=performance.now();emit(true);},
+   play(){if(!canPlay()||!program)return;const loopRange=activeLoopRange();if(loopRange&&(time<loopRange.start||time>=loopRange.end))time=loopRange.start;else if(time>=program.duration)time=0;stopTarget=computeStopTarget();playing=true;last=performance.now();checkAutoCamera();wake();emit(true);},
    pause,
-   seek(i){if(!canPlay()||!program)return;playing=false;time=sourceBoundary(program,i);dirty=true;emit(true);},
-   setPlaybackOptions(speed,loopGroup){advanceTo(performance.now());playbackSpeed=speed;playbackLoop=loopGroup;dirty=true;emit(true);},
-   setView:applyView,resetView(){applyView(viewName);},ghost(v){if(loaded)view.ghost(v);dirty=true;},
-   dispose(){disposed=true;cancelAnimationFrame(frameId);resize.disconnect();view.controls.removeEventListener('change',change);document.removeEventListener('visibilitychange',hidden);window.removeEventListener('axis:app-pause',pause);view.renderer.domElement.removeEventListener('webglcontextlost',contextLost);view.dispose();view.renderer.forceContextLoss();view.renderer.domElement.remove();},
+   seek(i){if(!canPlay()||!program)return;playing=false;stopTarget=null;time=sourceBoundary(program,i);lastAutoStep=-1;checkAutoCamera();dirty=true;wake();emit(true);},
+   seekTime(t){if(!canPlay()||!program)return;playing=false;stopTarget=null;time=Math.max(0,Math.min(program.duration,t));dirty=true;wake();emit(true);},
+   setPlaybackOptions(speed,loopGroup,loopMode='off',followMode='off'){advanceTo(performance.now());playbackSpeed=speed;playbackLoop=loopGroup;playbackLoopMode=loopMode;playbackFollowMode=followMode;stopTarget=playing?computeStopTarget():null;dirty=true;wake();emit(true);},
+   setView:applyView,resetView(){applyView(viewName);},ghost(v){if(loaded)view.ghost(v);dirty=true;wake();},
+   setFocus(mode){view.focusMode=mode;dirty=true;wake();},
+   setAutoCamera(v){autoCamera=v;lastAutoStep=-1;if(v)checkAutoCamera();},
+   dispose(){disposed=true;cancelAnimationFrame(frameId);frameId=0;resize.disconnect();view.controls.removeEventListener('change',change);document.removeEventListener('visibilitychange',hidden);window.removeEventListener('axis:app-pause',pause);view.renderer.domElement.removeEventListener('webglcontextlost',contextLost);view.dispose();view.renderer.forceContextLoss();view.renderer.domElement.remove();},
   };
   runtime.current=controller;controller.select(latest.current.formula,latest.current.personal,latest.current.restore);
-  void view.load().then(()=>{if(disposed){view.dispose();return;}loaded=true;view.ghost(latest.current.ghostHands);dirty=true;emit(true);}).catch(()=>{if(!disposed){error='早期机械手资源未能载入，请重新加载。';pause();}});
-  function animate(now:number){if(disposed)return;advanceTo(now);
-   if(dirty){try{draw();}catch{error='三维演示暂时中断，请重新加载后继续。';playing=false;dirty=false;emit(true);}}frameId=requestAnimationFrame(animate);
-  }
-  frameId=requestAnimationFrame(animate);return()=>{runtime.current=null;controller.dispose();};
+  void view.load().then(()=>{if(disposed){view.dispose();return;}loaded=true;view.ghost(latest.current.ghostHands);dirty=true;wake();emit(true);}).catch(()=>{if(!disposed){error='早期机械手资源未能载入，请重新加载。';pause();}});
+  wake();return()=>{runtime.current=null;controller.dispose();};
  },[]);
- useLayoutEffect(()=>{runtime.current?.select(props.formula,props.personal,props.restore);},[props.formula,props.personal,props.restore]);useLayoutEffect(()=>{runtime.current?.setPlaybackOptions(props.speed,props.loopGroup);},[props.speed,props.loopGroup]);useEffect(()=>{runtime.current?.ghost(props.ghostHands);},[props.ghostHands]);
+ useLayoutEffect(()=>{runtime.current?.select(props.formula,props.personal,props.restore);},[props.formula,props.personal,props.restore]);useLayoutEffect(()=>{runtime.current?.setPlaybackOptions(props.speed,props.loopGroup,props.loopMode,props.followMode);},[props.speed,props.loopGroup,props.loopMode,props.followMode]);useEffect(()=>{runtime.current?.ghost(props.ghostHands);},[props.ghostHands]);
+ useEffect(()=>{const mode:CubeFocusMode=!props.focusTarget?'off':props.personal?'f2l':props.formula.case.stage==='F2L'?'f2l':props.formula.case.stage==='OLL'?'oll':'pll';runtime.current?.setFocus(mode);},[props.focusTarget,props.personal,props.formula.case.stage]);
+ useEffect(()=>{runtime.current?.setAutoCamera(!!props.autoCamera);},[props.autoCamera]);
  return<div ref={host} className="cfop-teaching-stage" style={{position:'absolute',inset:0,overflow:'hidden'}}>{!ready&&!failure&&(props.personal?!!props.restore:isDemonstrationAvailable(props.formula.id))&&<div role="status" className="cfop-stage-message" style={{position:'absolute',inset:0,display:'grid',placeItems:'center',pointerEvents:'none',color:'#b9ccd7'}}>正在准备早期机械手…</div>}</div>;
 });
 export default TeachingStage;

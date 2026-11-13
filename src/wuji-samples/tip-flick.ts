@@ -5,7 +5,9 @@ import {contactTarget,type FingerContact} from '../scene/finger-contact';
 import {fingerJoints,forwardFinger} from '../scene/finger-rig';
 import type {FingerProgram,FingerSegment} from '../scene/finger-program';
 import {smooth,type MotionFrame} from '../scene/motion';
-import raw from '../../art/wuji-teaching/side-flick-calibration.json';
+import rawCompact from '../../art/wuji-teaching/compact/side-flick-calibration.json';
+import { unpackFlickCalibration } from './flick-calibration-codec';
+const raw = unpackFlickCalibration<typeof rawCompact.summary>(rawCompact);
 
 export const TIP_FLICK_METADATA={
  id:'f2l40-source-1-side-flick',sourceAlgorithm:'F2L 40',sourceStepIndex:1,finger:2,

@@ -1,7 +1,7 @@
 import { validateFacelets, type Palette } from "../core/cube";
 import { newSession, readSession, type Session } from "../core/session";
 import type { RestoreFlowState, SolveRunner } from "../wuji-solve-v1/flow";
-import { prepareRestore, type RestoreSource } from "../wuji-solve-v1/input";
+import { prepareRestoreState, type RestoreSource } from "../wuji-solve-v1/input";
 import type { SolveStore } from "../wuji-solve-v1/storage";
 import { compileGripSolveC114 } from "../wuji-samples/grip-solve-c114";
 
@@ -11,9 +11,16 @@ export interface PersonalRestoreState extends RestoreFlowState {
 
 function prepareMotion(session: Session): RestoreSource | null {
   try {
-    const source = prepareRestore(session);
-    const program = compileGripSolveC114(source.steps.map((step) => step.move));
-    return { ...source, program };
+    const base = prepareRestoreState(session);
+    const moves = base.steps.map((step) => step.move);
+    const program = compileGripSolveC114(moves);
+    if (
+      program.steps.length !== moves.length ||
+      program.steps.some((s, i) => JSON.stringify(s.move) !== JSON.stringify(moves[i]))
+    ) {
+      throw Error("机械动作与真实解序不一致，已停止。");
+    }
+    return { ...base, program };
   } catch (error) {
     console.warn("AXIS restore motion failed", error);
     return null;
@@ -25,17 +32,37 @@ export class PersonalRestoreFlow {
   private revision = 0;
   private listeners = new Set<() => void>();
   private pendingSave: Session | null = null;
+  private hydrated: boolean;
   private current: PersonalRestoreState;
 
-  constructor(private readonly store: SolveStore, private readonly runner: SolveRunner) {
+  constructor(
+    private readonly store: SolveStore,
+    private readonly runner: SolveRunner,
+    eager = true,
+  ) {
     const saved = store.loadSession();
-    const source = saved.value ? prepareMotion(saved.value) : null;
+    this.hydrated = eager || !saved.value;
+    const source = eager && saved.value ? prepareMotion(saved.value) : null;
     this.current = {
       source, recovery: saved.value, capturing: false, busy: false,
       phase: source ? "ready" : "idle", error: "", notice: saved.warning,
-      motionFailed: !!saved.value && !source,
+      motionFailed: eager && !!saved.value && !source,
     };
   }
+
+  activate = () => {
+    if (this.hydrated) return;
+    this.hydrated = true;
+    const { recovery } = this.current;
+    if (recovery && !this.current.source) {
+      const source = prepareMotion(recovery);
+      this.patch({
+        source,
+        phase: source ? "ready" : "idle",
+        motionFailed: !source,
+      });
+    }
+  };
 
   snapshot = () => this.current;
 

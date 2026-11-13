@@ -47,6 +47,10 @@ export interface DemonstratorStatus {
   completed: number;
   active: number;
   phase: string;
+  stageCode?: string;
+  time?: number;
+  duration?: number;
+  stepBoundaries?: readonly number[];
   instruction: string;
   finger: string;
   error?: string;
@@ -55,6 +59,7 @@ export interface DemonstratorHandle {
   play(): void;
   pause(): void;
   seek(step: number): void;
+  seekTime?(seconds: number): void;
   resetView(): void;
   setView(view: "solver" | "side" | "back"): void;
 }

@@ -51,6 +51,30 @@ const TOP: Record<Face, Face> = {
   U: "B",
   D: "F",
 };
+const BOTTOM: Record<Face, Face> = {
+  F: "D",
+  R: "D",
+  B: "D",
+  L: "D",
+  U: "F",
+  D: "B",
+};
+const LEFT: Record<Face, Face> = {
+  F: "L",
+  R: "F",
+  B: "R",
+  L: "B",
+  U: "L",
+  D: "L",
+};
+const TURN_GUIDE: Record<Face, { arrow: string; hint: string }> = {
+  F: { arrow: "◉", hint: "选定前面与顶面，保持顶面朝上" },
+  R: { arrow: "↶ 左转90°", hint: "整颗魔方向左横转 90°，把原右面转向镜头" },
+  B: { arrow: "↶ 再左转90°", hint: "继续向左横转 90°，顶面颜色保持不变" },
+  L: { arrow: "↶ 再左转90°", hint: "继续向左横转 90°，拍完四周侧面" },
+  U: { arrow: "↷ 回前面·下翻90°", hint: "先回前面朝向，再把顶面朝镜头翻出" },
+  D: { arrow: "⇅ 上下翻转180°", hint: "右面不动，把魔方上下翻转半圈拍底面" },
+};
 type Job = { face: Face; file: File; revision?: number };
 type PendingPhoto = {
   face: Face;
@@ -212,6 +236,10 @@ export function SolveCapture({
   const [paint, setPaint] = useState<Face>("U"),
     [editingColors, setEditingColors] = useState(false),
     [verified, setVerified] = useState(false);
+  const [liveHint, setLiveHint] = useState<{
+    status: "ready" | "motion" | "glare";
+    label: string;
+  }>({ status: "ready", label: "✓ 画面稳定 · 可拍摄" });
   const [sheet, setSheet] = useState<"menu" | "help" | "import" | null>(null),
     [detail, setDetail] = useState<Face | null>(null);
   const iOSPhotoLibrary =
@@ -449,8 +477,45 @@ export function SolveCapture({
     element.srcObject = media;
     if (document.visibilityState === "hidden") suspend();
     else void element.play().then(ready).catch(failed);
+    const probeCanvas = document.createElement("canvas");
+    probeCanvas.width = 24;
+    probeCanvas.height = 24;
+    const probeCtx = probeCanvas.getContext("2d", { willReadFrequently: true });
+    let prevLuma: Float32Array | null = null;
+    const probeTimer = window.setInterval(() => {
+      if (!isCurrent() || pageSuspended || element.paused || !probeCtx) return;
+      try {
+        probeCtx.drawImage(element, 0, 0, 24, 24);
+        const data = probeCtx.getImageData(4, 4, 16, 16).data;
+        const currLuma = new Float32Array(256);
+        let glarePixels = 0;
+        let diffSum = 0;
+        for (let i = 0; i < 256; i++) {
+          const r = data[i * 4];
+          const g = data[i * 4 + 1];
+          const b = data[i * 4 + 2];
+          const y = 0.299 * r + 0.587 * g + 0.114 * b;
+          currLuma[i] = y;
+          if (r > 245 && g > 245 && b > 245) glarePixels++;
+          if (prevLuma) diffSum += Math.abs(y - prevLuma[i]);
+        }
+        prevLuma = currLuma;
+        const glareRatio = glarePixels / 256;
+        const meanDiff = diffSum / 256;
+        if (glareRatio > 0.16) {
+          setLiveHint({ status: "glare", label: "⚠ 注意反光 · 请微调倾角" });
+        } else if (meanDiff > 16) {
+          setLiveHint({ status: "motion", label: "请拿稳魔方…" });
+        } else {
+          setLiveHint({ status: "ready", label: "✓ 画面稳定 · 可拍摄" });
+        }
+      } catch {
+        // Ignore in synthetic test environments without pixel readback
+      }
+    }, 280);
     return () => {
       active = false;
+      window.clearInterval(probeTimer);
       cancelFrame();
       listeners.forEach(([name, handler]) =>
         element.removeEventListener(name, handler),
@@ -872,7 +937,45 @@ export function SolveCapture({
     publish(emptyCapture());
     setNotice("已清空上次录入，请从前面开始拍摄。");
   }
-  const validation = captureValidation(capture.colors);
+  const colorCounts = useMemo(
+    () =>
+      Object.fromEntries(
+        FACES.map((f) => [
+          f,
+          [...capture.colors].filter((c) => c === f).length,
+        ]),
+      ) as Record<Face, number>,
+    [capture.colors],
+  );
+  function openColorEditor() {
+    const deficit = FACES.find((f) => colorCounts[f] < 9);
+    if (deficit) setPaint(deficit);
+    setEditingColors(true);
+  }
+  function startManualFill() {
+    stopCamera();
+    leaveEditor();
+    setSheet(null);
+    const base = current.current;
+    const filledColors = FACES.map((f, fi) => {
+      const slice = base.colors.slice(fi * 9, fi * 9 + 9);
+      return [...slice].map((c) => (c === "?" ? f : c)).join("");
+    }).join("");
+    const next: CaptureState = {
+      ...base,
+      colors: filledColors,
+      locked: Array.from({ length: 54 }, (_, i) => i),
+      uncertain: [],
+      status: "review",
+      message: "手动填色模式：先选下方颜色，再点选展开图格子填色。",
+    };
+    publish(next);
+    setEditingColors(true);
+    setPaint("U");
+    changePhase("review");
+    setNotice("已开启手动填色，对照实物点选格子即可修改。");
+  }
+  const validation = captureValidation(capture.colors, capture);
   const count = CAPTURE_ORDER.filter((f) =>
     isCompleteFace(capture.colors, f),
   ).length;
@@ -1122,25 +1225,60 @@ export function SolveCapture({
           <p>
             相册选六张时，顺序为前、右、后、左、上、下；不确定顺序可逐张导入。
           </p>
-          {iOSPhotoLibrary && (
+          <div className="capture-entry-links">
+            {iOSPhotoLibrary && (
+              <button
+                className="capture-import-help"
+                onClick={() => setSheet("import")}
+              >
+                相册导入慢？查看提速方法 <ArrowRight size={15} />
+              </button>
+            )}
             <button
               className="capture-import-help"
-              onClick={() => setSheet("import")}
+              onClick={startManualFill}
             >
-              相册导入慢？查看提速方法 <ArrowRight size={15} />
+              不拍照，直接手动填色 <ArrowRight size={15} />
             </button>
-          )}
+          </div>
         </main>
       ) : phase === "collect" ? (
         <main inert={!!sheet} className="capture-page capture-page-focus">
           <div className="capture-direction">
             <p>
-              {FACE_NAMES[face]}面朝向镜头
+              <strong>
+                {FACE_NAMES[face]}面朝向镜头
+                <span className="capture-turn-badge">
+                  {TURN_GUIDE[face].arrow}
+                </span>
+              </strong>
               <small>
-                顶边邻接{FACE_NAMES[TOP[face]]}面 · 只翻整颗，不拧层
+                {TURN_GUIDE[face].hint} · 顶邻
+                <i
+                  className="capture-neighbor-dot"
+                  style={{
+                    background:
+                      COLORS[
+                        capture.colors[FACES.indexOf(TOP[face]) * 9 + 4] as Face
+                      ] ?? COLORS[TOP[face]],
+                  }}
+                />
+                {FACE_NAMES[TOP[face]]}面 · 左邻
+                <i
+                  className="capture-neighbor-dot"
+                  style={{
+                    background:
+                      COLORS[
+                        capture.colors[
+                          FACES.indexOf(LEFT[face]) * 9 + 4
+                        ] as Face
+                      ] ?? COLORS[LEFT[face]],
+                  }}
+                />
+                {FACE_NAMES[LEFT[face]]}面
               </small>
             </p>
-            <button onClick={() => setSheet("help")}>翻面提示</button>
+            <button onClick={() => setSheet("help")}>翻面图示</button>
           </div>
           <div className="capture-view" ref={view}>
             {camera ? (
@@ -1160,6 +1298,14 @@ export function SolveCapture({
                   }}
                   aria-hidden="true"
                 />
+                {cameraReady && (
+                  <span
+                    className={`camera-live-pill is-${liveHint.status}`}
+                    aria-live="polite"
+                  >
+                    {liveHint.label}
+                  </span>
+                )}
               </div>
             ) : (
               <div className="capture-view-empty">
@@ -1261,6 +1407,11 @@ export function SolveCapture({
               <h4>
                 {FACE_NAMES[detail]}面 · {faceStatus(detail)}
               </h4>
+              <p className="capture-face-neighbors">
+                方位锚点：上邻{FACE_NAMES[TOP[detail]]}面 · 右邻
+                {FACE_NAMES[RIGHT[detail]]}面 · 下邻{FACE_NAMES[BOTTOM[detail]]}
+                面 · 左邻{FACE_NAMES[LEFT[detail]]}面
+              </p>
               <div className="capture-comparison">
                 {currentPhoto?.thumbnail && (
                   <img
@@ -1365,10 +1516,25 @@ export function SolveCapture({
                   }
                   onSticker={
                     editingColors && !unfinished && !processing
-                      ? (index) =>
-                          publish(
-                            paintCaptureCell(current.current, index, paint),
-                          )
+                      ? (index) => {
+                          const nextState = paintCaptureCell(
+                            current.current,
+                            index,
+                            paint,
+                          );
+                          publish(nextState);
+                          const nextPaintCount = [...nextState.colors].filter(
+                            (c) => c === paint,
+                          ).length;
+                          if (nextPaintCount >= 9) {
+                            const nextDeficit = FACES.find(
+                              (f) =>
+                                [...nextState.colors].filter((c) => c === f)
+                                  .length < 9,
+                            );
+                            if (nextDeficit) setPaint(nextDeficit);
+                          }
+                        }
                       : undefined
                   }
                 />
@@ -1377,27 +1543,42 @@ export function SolveCapture({
                 className="subtle-button"
                 disabled={processing || unfinished}
                 aria-expanded={editingColors}
-                onClick={() => setEditingColors((old) => !old)}
+                onClick={() => {
+                  if (editingColors) setEditingColors(false);
+                  else openColorEditor();
+                }}
               >
                 {editingColors ? "收起手动修正" : "需要时手动修正颜色"}
               </button>
               {editingColors && (
                 <>
                   <div className="color-palette" aria-label="选择填色">
-                    {FACES.map((f) => (
-                      <button
-                        key={f}
-                        aria-label={`选择${COLOR_NAMES[f]}色`}
-                        aria-pressed={paint === f}
-                        style={{ background: COLORS[f] }}
-                        onClick={() => setPaint(f)}
-                      >
-                        {paint === f && <Check size={16} />}
-                      </button>
-                    ))}
+                    {FACES.map((f) => {
+                      const cCount = colorCounts[f];
+                      const countState =
+                        cCount < 9
+                          ? "is-deficit"
+                          : cCount > 9
+                            ? "is-excess"
+                            : "is-exact";
+                      return (
+                        <button
+                          key={f}
+                          aria-label={`选择${COLOR_NAMES[f]}色`}
+                          aria-pressed={paint === f}
+                          style={{ background: COLORS[f] }}
+                          onClick={() => setPaint(f)}
+                        >
+                          {paint === f && <Check size={16} />}
+                          <span className={`palette-count ${countState}`}>
+                            {cCount}/9
+                          </span>
+                        </button>
+                      );
+                    })}
                   </div>
                   <p className="capture-hint">
-                    先选颜色，再点对应面的色块；手动修正会保留。
+                    已自动选中缺少的颜色（块下显示当前格数/9）；点击高亮格即可修正。
                   </p>
                 </>
               )}
@@ -1554,7 +1735,7 @@ export function SolveCapture({
                       );
                     }
                   } else {
-                    setEditingColors(true);
+                    openColorEditor();
                     reviewNet.current?.focus({ preventScroll: true });
                     reviewNet.current?.scrollIntoView?.({
                       block: "start",
@@ -1790,6 +1971,13 @@ export function SolveCapture({
                 )}
                 <button className="secondary-button" onClick={review}>
                   查看六面进度
+                </button>
+                <button
+                  className="secondary-button"
+                  disabled={processing || editorBusy}
+                  onClick={startManualFill}
+                >
+                  直接手动填色
                 </button>
                 {pending && (
                   <SavePhotoLink file={pending.file} face={pending.face} />

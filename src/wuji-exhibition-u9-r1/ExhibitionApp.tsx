@@ -1,5 +1,5 @@
 import{openingView}from'../wuji-exhibition-u8-r1/opening-view';
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   ArrowLeft,
   ChevronDown,
@@ -18,9 +18,12 @@ import {
 } from "lucide-react";
 import {
   CFOP_CASES,
+  getCFOPCase,
   type CFOPCase,
   type CFOPStage,
 } from "../learning/cfop-library";
+import { COLOR_NAMES, DEFAULT_PALETTE, type Move } from "../core/cube";
+import { buildExplainableSubstages } from "../core/cfop-case-matcher";
 import { CFOPDiagram } from "../site/CFOPDiagram";
 import { navigate, navigationDepth } from "../site/router";
 import {
@@ -36,7 +39,7 @@ import {
   readDemoPreferences,
   saveDemoPreferences,
 } from "../wuji-exhibition-u8-r1/preferences";
-import TeachingStage from "../wuji-exhibition-u8-r1/TeachingStage";
+import TeachingStage, { type StageFollowMode, type StageLoopMode } from "../wuji-exhibition-u8-r1/TeachingStage";
 import { SourceAlgorithm } from "../wuji-exhibition-u8-r1/SourceAlgorithm";
 import type {
   DemonstratorHandle,
@@ -50,6 +53,28 @@ import './mobile-capture.css';
 import { useRestore } from '../wuji-solve-u9-r1/use-restore';
 import{SolveCapture}from'../wuji-solve-v1/Capture';
 import{exportSession}from'../core/session';
+
+type LearningStatus = "favorite" | "learning" | "mastered";
+const LEARNING_PROGRESS_KEY = "axis.cfop-learning-progress.v1";
+function loadLearningProgress(): Record<string, LearningStatus> {
+  try {
+    const raw = localStorage.getItem(LEARNING_PROGRESS_KEY);
+    return raw ? (JSON.parse(raw) as Record<string, LearningStatus>) : {};
+  } catch {
+    return {};
+  }
+}
+function saveLearningProgress(next: Record<string, LearningStatus>) {
+  try {
+    localStorage.setItem(LEARNING_PROGRESS_KEY, JSON.stringify(next));
+  } catch {
+    // ignore quota errors
+  }
+}
+function inverseMoveNotation(move: Move): string {
+  if (move.turns === 2) return move.face + "2";
+  return move.turns === 3 ? move.face : move.face + "′";
+}
 
 const EMPTY_STATUS: DemonstratorStatus = {
   ready: false,
@@ -126,15 +151,20 @@ function Details({ formula }: { formula: FormulaRecord }) {
 
 export default function ExhibitionApp() {
   const { formula, retired, missing, personal } = useFormulaRoute();
-  const { flow, state: restore } = useRestore();
+  const { flow, state: restore } = useRestore(personal);
   const importFile = useRef<HTMLInputElement>(null);
   const recovery = restore.recovery;
   const motionFailed = personal && !restore.source && !!recovery && restore.motionFailed;
   const source=personal?restore.source:formula;
   const compact = useCompact();
   const stage = useRef<DemonstratorHandle>(null);
+  useEffect(() => {
+    if (restore.capturing) stage.current?.pause();
+  }, [restore.capturing]);
   const [status, setStatus] = useState(EMPTY_STATUS);
   const [filter, setFilter] = useState<CFOPStage>(formula.case.stage);
+  const [categoryFilter, setCategoryFilter] = useState<string>("全部");
+  const [learningProgress, setLearningProgress] = useState<Record<string, LearningStatus>>(loadLearningProgress);
   const [query, setQuery] = useState("");
   const [drawer, setDrawer] = useState<"list" | "details" | null>(null);
   const [preferences, setPreferences] = useState(DEFAULT_PREFERENCES);
@@ -142,6 +172,11 @@ export default function ExhibitionApp() {
   const [preferenceWritable, setPreferenceWritable] = useState(false);
   const [preferenceNote, setPreferenceNote] = useState("");
   const [loopGroup, setLoopGroup] = useState<number | null>(null);
+  const [loopMode, setLoopMode] = useState<StageLoopMode>("off");
+  const [followMode, setFollowMode] = useState<StageFollowMode>("off");
+  const [focusTarget, setFocusTarget] = useState(false);
+  const [autoCamera, setAutoCamera] = useState(false);
+  const [undoHint, setUndoHint] = useState("");
   const [view, setView] = useState<"solver" | "side" | "back">(()=>openingView(formula));
   const [routeNotice, setRouteNotice] = useState(
     retired
@@ -162,20 +197,57 @@ export default function ExhibitionApp() {
   const currentGroup =
     source?.steps[Math.min(status.active, total - 1)]?.group ?? 0;
   const updateStatus = useCallback((value: DemonstratorStatus) => {
-    setStatus(current => current.ready === value.ready &&
-      current.playing === value.playing && current.completed === value.completed &&
-      current.active === value.active && current.phase === value.phase &&
-      current.instruction === value.instruction && current.finger === value.finger &&
-      current.error === value.error ? current : value);
-  }, []);
+    setStatus(current => {
+      if (value.playing && undoHint) setUndoHint("");
+      return current.ready === value.ready &&
+        current.playing === value.playing && current.completed === value.completed &&
+        current.active === value.active && current.phase === value.phase &&
+        current.stageCode === value.stageCode &&
+        Math.abs((current.time ?? 0) - (value.time ?? 0)) < 0.01 &&
+        current.duration === value.duration &&
+        current.instruction === value.instruction && current.finger === value.finger &&
+        current.error === value.error ? current : value;
+    });
+  }, [undoHint]);
+  const categories = useMemo(
+    () => [
+      "全部",
+      "★ 收藏",
+      ...new Set(CFOP_CASES.filter((c) => c.stage === filter).map((c) => c.category)),
+    ],
+    [filter],
+  );
   const filtered = CFOP_CASES.filter(
     (item) =>
       item.stage === filter &&
+      (categoryFilter === "全部" ||
+        (categoryFilter === "★ 收藏"
+          ? !!learningProgress[item.id]
+          : item.category === categoryFilter)) &&
       (!query.trim() ||
         `${item.stage} ${String(item.sourceNumber).padStart(2, "0")} ${item.sourceNumber} ${item.name} ${item.category} ${item.algorithm} ${item.recognition}`
           .toLowerCase()
           .includes(query.trim().toLowerCase())),
   );
+  const cycleLearningStatus = (caseId: string) => {
+    const current = learningProgress[caseId];
+    const next: Record<string, LearningStatus> = { ...learningProgress };
+    if (!current) next[caseId] = "favorite";
+    else if (current === "favorite") next[caseId] = "learning";
+    else if (current === "learning") next[caseId] = "mastered";
+    else delete next[caseId];
+    setLearningProgress(next);
+    saveLearningProgress(next);
+  };
+  const explainableSubstages = useMemo(() => {
+    if (!personal || !restore.source) return [];
+    return buildExplainableSubstages(
+      restore.source.states,
+      restore.source.steps.map((s) => s.move),
+      restore.source.session.phases,
+      restore.source.palette,
+    );
+  }, [personal, restore.source]);
   const openDrawer = (kind: "list" | "details") => {
     opener.current = document.activeElement as HTMLElement;
     setDrawer(kind);
@@ -184,6 +256,8 @@ export default function ExhibitionApp() {
     const selectedVariant = variant ?? getCaseFormulas(item.id).find(record => isDemonstrationAvailable(record.id))?.variant ?? 0;
     stage.current?.pause();
     setLoopGroup(null);
+    setLoopMode("off");
+    setUndoHint("");
     setDrawer(null);
     setRouteNotice("");
     if (formula.case.id !== item.id || formula.variant !== selectedVariant)
@@ -291,8 +365,63 @@ export default function ExhibitionApp() {
     };
   }, [drawer, compact]);
 
-  useEffect(()=>{stage.current?.pause();setLoopGroup(null);setDrawer(null);if(!personal)flow.closeCapture();document.title=personal?'还原我的魔方 · AXIS':document.title;},[personal,flow]);
+  useEffect(()=>{stage.current?.pause();setLoopGroup(null);setLoopMode("off");setUndoHint("");setDrawer(null);if(!personal)flow.closeCapture();document.title=personal?'还原我的魔方 · AXIS':document.title;},[personal,flow]);
   const modeTo=(own:boolean)=>{stage.current?.pause();navigate(own?'/solve':formulaHref(formula.case.id,formula.variant));};
+  const stepBackward = useCallback(() => {
+    const prevIdx = Math.max(0, status.completed - 1);
+    const undoneStep = source?.steps[prevIdx];
+    if (undoneStep) {
+      setUndoHint(`撤回第 ${prevIdx + 1} 步（${showNotation(undoneStep.move.notation)}）：实物魔方请反拧 ${inverseMoveNotation(undoneStep.move)}`);
+    }
+    stage.current?.seek(prevIdx);
+  }, [status.completed, source]);
+  const stepForward = useCallback(() => {
+    setUndoHint("");
+    stage.current?.seek(Math.min(total, status.completed + 1));
+  }, [status.completed, total]);
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (drawer || restore.capturing) return;
+      const target = event.target as HTMLElement | null;
+      if (target && ["INPUT", "TEXTAREA", "SELECT", "BUTTON"].includes(target.tagName)) {
+        if (event.key !== " " && event.key !== "ArrowLeft" && event.key !== "ArrowRight") return;
+        if (["INPUT", "TEXTAREA", "SELECT"].includes(target.tagName)) return;
+      }
+      if (!canOperate) return;
+      if (event.key === " ") {
+        event.preventDefault();
+        if (status.playing) stage.current?.pause();
+        else stage.current?.play();
+      } else if (event.key === "ArrowLeft") {
+        event.preventDefault();
+        if (event.shiftKey) {
+          stage.current?.seekTime?.(Math.max(0, (status.time ?? 0) - 0.08));
+        } else if (status.completed > 0) {
+          stepBackward();
+        }
+      } else if (event.key === "ArrowRight") {
+        event.preventDefault();
+        if (event.shiftKey) {
+          stage.current?.seekTime?.(Math.min(status.duration ?? 0, (status.time ?? 0) + 0.08));
+        } else if (status.completed < total) {
+          stepForward();
+        }
+      } else if (event.key === "r" || event.key === "R") {
+        stage.current?.resetView();
+      } else if (event.key === "g" || event.key === "G") {
+        savePreferences({ ghostHands: !preferences.ghostHands });
+      } else if (event.key === "f" || event.key === "F") {
+        setFocusTarget((v) => !v);
+      }
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [drawer, restore.capturing, canOperate, status.playing, status.time, status.duration, status.completed, total, stepBackward, stepForward, preferences.ghostHands]);
+  const activePalette = personal && restore.source ? restore.source.palette : DEFAULT_PALETTE;
+  const orientationSummary = personal
+    ? `持方：上[${COLOR_NAMES[activePalette.U]}] · 前[${COLOR_NAMES[activePalette.F]}] · 右[${COLOR_NAMES[activePalette.R]}]`
+    : "持方：上[黄] · 前[蓝] · 右[红] · 底[白]";
+  const currentCaseStatus = learningProgress[formula.case.id];
   const catalogue = (
     <>
       <div className="cd-library-title">
@@ -316,12 +445,26 @@ export default function ExhibitionApp() {
             key={item}
             onClick={() => {
               setFilter(item);
+              setCategoryFilter("全部");
               setQuery("");
             }}
             aria-pressed={filter === item}
           >
             <b>{item}</b>
             <span>{CFOP_CASES.filter((c) => c.stage === item).length}</span>
+          </button>
+        ))}
+      </div>
+      <div className="cd-category-chips" role="group" aria-label="子分类筛选">
+        {categories.map((cat) => (
+          <button
+            key={cat}
+            type="button"
+            className={`cd-chip ${categoryFilter === cat ? "is-active" : ""}`}
+            aria-pressed={categoryFilter === cat}
+            onClick={() => setCategoryFilter(cat)}
+          >
+            {cat}
           </button>
         ))}
       </div>
@@ -340,35 +483,39 @@ export default function ExhibitionApp() {
         )}
       </label>
       <div className="cd-list-caption">
-        <span>{stageNames[filter]}</span>
+        <span>{stageNames[filter]}{categoryFilter !== "全部" ? ` · ${categoryFilter}` : ""}</span>
         <span>{filtered.length} 个情形</span>
       </div>
       <div className="cd-case-list">
         {filtered.length ? (
-          filtered.map((item) => (
-            <button
-              className={`cd-case ${formula.case.id === item.id ? "is-selected" : ""}`}
-              key={item.id}
-              onClick={() => choose(item)}
-              aria-current={formula.case.id === item.id ? "true" : undefined}
-              aria-label={`${item.stage} ${String(item.sourceNumber).padStart(2, "0")} ${item.name}`}
-            >
-              <CFOPDiagram example={item} />
-              <span>
-                <small>
-                  {item.stage} {String(item.sourceNumber).padStart(2, "0")}
-                </small>
-                <strong>{item.name}</strong>
-                <em className={getCaseFormulas(item.id).some(record => isDemonstrationAvailable(record.id)) ? "cd-availability-ready" : ""}>
-                  {isDemonstrationAvailable(item.id) ? "指法演示可播放" : getCaseFormulas(item.id).some(record => isDemonstrationAvailable(record.id)) ? "替代式演示已开放" : "演示校准中"}
-                  {item.alternateAlgorithms?.length ? " · 含替代公式" : ""}
-                </em>
-              </span>
-              <ChevronRight size={14} />
-            </button>
-          ))
+          filtered.map((item) => {
+            const mark = learningProgress[item.id];
+            return (
+              <button
+                className={`cd-case ${formula.case.id === item.id ? "is-selected" : ""}`}
+                key={item.id}
+                onClick={() => choose(item)}
+                aria-current={formula.case.id === item.id ? "true" : undefined}
+                aria-label={`${item.stage} ${String(item.sourceNumber).padStart(2, "0")} ${item.name}`}
+              >
+                <CFOPDiagram example={item} />
+                <span>
+                  <small>
+                    {item.stage} {String(item.sourceNumber).padStart(2, "0")}
+                    {mark ? ` · ${mark === "favorite" ? "★ 收藏" : mark === "learning" ? "在练" : "✓ 已掌握"}` : ""}
+                  </small>
+                  <strong>{item.name}</strong>
+                  <em className={getCaseFormulas(item.id).some(record => isDemonstrationAvailable(record.id)) ? "cd-availability-ready" : ""}>
+                    {isDemonstrationAvailable(item.id) ? "指法演示可播放" : getCaseFormulas(item.id).some(record => isDemonstrationAvailable(record.id)) ? "替代式演示已开放" : "演示校准中"}
+                    {item.alternateAlgorithms?.length ? " · 含替代公式" : ""}
+                  </em>
+                </span>
+                <ChevronRight size={14} />
+              </button>
+            );
+          })
         ) : (
-          <p className="cd-empty">没有匹配的情形。试试编号或清空搜索。</p>
+          <p className="cd-empty">没有匹配的情形。试试切换分类或清空搜索。</p>
         )}
       </div>
       <div className="cd-library-footer">
@@ -422,6 +569,14 @@ export default function ExhibitionApp() {
               <h1>{formula.case.name}</h1>
             </div>
             <button
+              type="button"
+              className={`cd-tool cd-bookmark-button ${currentCaseStatus ? "is-on" : ""}`}
+              onClick={() => cycleLearningStatus(formula.case.id)}
+              aria-label="标记当前情形学习状态"
+            >
+              {!currentCaseStatus ? "☆ 收藏" : currentCaseStatus === "favorite" ? "★ 已收藏" : currentCaseStatus === "learning" ? "● 在练" : "✓ 已掌握"}
+            </button>
+            <button
               className="cd-select-button"
               onClick={() => openDrawer("list")}
             >
@@ -451,6 +606,10 @@ export default function ExhibitionApp() {
               speed={preferences.speed}
               ghostHands={preferences.ghostHands}
               loopGroup={loopGroup}
+              loopMode={loopMode}
+              followMode={followMode}
+              focusTarget={focusTarget}
+              autoCamera={autoCamera}
               onStatus={updateStatus}
             />
             <div className="cd-view-tools">
@@ -485,6 +644,20 @@ export default function ExhibitionApp() {
                 }
               >
                 手部透视
+              </button>
+              <button
+                className={`cd-tool ${focusTarget ? "is-on" : ""}`}
+                aria-pressed={focusTarget}
+                onClick={() => setFocusTarget((v) => !v)}
+              >
+                聚焦目标
+              </button>
+              <button
+                className={`cd-tool ${autoCamera ? "is-on" : ""}`}
+                aria-pressed={autoCamera}
+                onClick={() => setAutoCamera((v) => !v)}
+              >
+                智能跟拍
               </button>
               <button
                 className="cd-icon"
@@ -546,6 +719,9 @@ export default function ExhibitionApp() {
                 ? "MECHANICAL DEMONSTRATION"
                 : "拖动观察 · 双指缩放"}
             </span>
+            <span className="cd-orientation-pill" aria-label="实物魔方当前持方中心色">
+              {orientationSummary}
+            </span>
           </div>
           <section className="cd-player" aria-label="公式与播放控制">
             <div className="cd-player-heading">
@@ -568,9 +744,9 @@ export default function ExhibitionApp() {
                 <i>/ {total.toString().padStart(2, "0")}</i>
               </span>
             </div>
-            {personal?<div className="solve-sequence">{restore.source?<><div className="solve-phases">{restore.source.groups.filter(g=>g.end>g.start).map(g=><button key={g.index} disabled={!canOperate || (personal&&total===0)} aria-pressed={currentGroup===g.index} onClick={()=>{setLoopGroup(null);stage.current?.seek(g.start);}}>{restorePhaseNames[g.text]??g.text}</button>)}<button onClick={()=>exportSession(restore.source!.session)}>下载局面</button></div><div className="solve-tokens" aria-label="真实解序">{restore.source.steps.map((s,i)=><button key={i} disabled={!canOperate || (personal&&total===0)} aria-label={`定位到复原第 ${i+1} 个动作 ${showNotation(s.move.notation)} 前`} aria-current={status.active===i?'step':undefined} className={i<status.completed?'is-done':''} onClick={()=>{setLoopGroup(null);stage.current?.seek(i);}}>{showNotation(s.move.notation)}</button>)}</div>{total===0&&<p>输入局面已经还原，无需转层。</p>}</>:!motionFailed&&<p>录入 → 校正 → 核对 → 生成复原演示</p>}{restore.notice&&<p className="solve-record-note" role="status">{restore.notice}</p>}{restore.error&&!restore.capturing&&<p role="alert">{restore.error}</p>}</div>:<SourceAlgorithm
+            {personal?<div className="solve-sequence">{restore.source?<><div className="solve-phases">{restore.source.groups.filter(g=>g.end>g.start).map(g=><button key={g.index} disabled={!canOperate || (personal&&total===0)} aria-pressed={currentGroup===g.index} onClick={()=>{setLoopGroup(null);setUndoHint("");stage.current?.seek(g.start);}}>{restorePhaseNames[g.text]??g.text}</button>)}<button onClick={()=>exportSession(restore.source!.session)}>下载局面</button></div>{explainableSubstages.length > 0 && (<div className="solve-substages" aria-label="CFOP 子阶段分段拆解">{explainableSubstages.map(sub=>{const isActive=status.active>=sub.start&&status.active<sub.end;return(<div key={sub.id} className={`solve-substage-chip ${isActive?'is-active':''}`}><button type="button" className="solve-substage-jump" disabled={!canOperate} onClick={()=>{setLoopGroup(null);setUndoHint("");stage.current?.seek(sub.start);}}><b>{sub.title}</b><span>{sub.detail}</span></button>{sub.matchedCase&&(<button type="button" className="solve-substage-link" onClick={()=>{const matched=getCFOPCase(sub.matchedCase!.id);if(matched)choose(matched);}} aria-label={`对照标准库 ${sub.matchedCase.code}`}>标准库 {sub.matchedCase.code} ↗</button>)}</div>);})}</div>)}<div className="solve-tokens" aria-label="真实解序">{restore.source.steps.map((s,i)=><button key={i} disabled={!canOperate || (personal&&total===0)} aria-label={`定位到复原第 ${i+1} 个动作 ${showNotation(s.move.notation)} 前`} aria-current={status.active===i?'step':undefined} className={i<status.completed?'is-done':''} onClick={()=>{setLoopGroup(null);setUndoHint("");stage.current?.seek(i);}}>{showNotation(s.move.notation)}</button>)}</div>{total===0&&<p>输入局面已经还原，无需转层。</p>}</>:!motionFailed&&<p>录入 → 校正 → 核对 → 生成复原演示</p>}{restore.notice&&<p className="solve-record-note" role="status">{restore.notice}</p>}{restore.error&&!restore.capturing&&<p role="alert">{restore.error}</p>}</div>:<SourceAlgorithm
               formula={formula} active={status.active} completed={status.completed} loopGroup={loopGroup} playable={canOperate}
-              onSeek={step=>{setLoopGroup(null);stage.current?.seek(step);}}/>}
+              onSeek={step=>{setLoopGroup(null);setUndoHint("");stage.current?.seek(step);}}/>}
             <div className="cd-current">
               <span
                 className={`cd-phase-dot ${status.playing ? "is-playing" : ""}`}
@@ -581,19 +757,38 @@ export default function ExhibitionApp() {
                   : status.finger || "起始拿法"}
               </span>
               <p>
-                {personal&&!restore.source?(motionFailed?"当前解序可直接恢复。":"先录入并核对六面颜色。"):!demonstrationAvailable ? <>演示校准中，可先对照原表。 <button className="cd-inline-link" onClick={() => openDrawer("details")}>识别与拿法</button></> : status.completed === total
+                {undoHint ? (
+                  <span className="cd-undo-cue">{undoHint}</span>
+                ) : personal&&!restore.source?(motionFailed?"当前解序可直接恢复。":"先录入并核对六面颜色。"):!demonstrationAvailable ? <>演示校准中，可先对照原表。 <button className="cd-inline-link" onClick={() => openDrawer("details")}>识别与拿法</button></> : status.completed === total
                   ? (personal?"六面已还原，可倒退到任一步重新观察。":"核对目标块与已完成部分，再从头跟做。")
                   : status.instruction}
               </p>
               <span className="cd-phase">{personal&&!restore.source?(motionFailed?"恢复":"录入"):demonstrationAvailable ? status.phase : "校准中"}</span>
             </div>
+            <div className="cd-scrubber">
+              <input
+                type="range"
+                className="cd-timeline-range"
+                aria-label="动作时间轴进度"
+                min={0}
+                max={Math.max(0.01, status.duration ?? 0.01)}
+                step={0.01}
+                value={Math.min(status.time ?? 0, Math.max(0.01, status.duration ?? 0.01))}
+                disabled={!canOperate || (personal && total === 0)}
+                onChange={(event) => {
+                  setUndoHint("");
+                  stage.current?.seekTime?.(Number(event.target.value));
+                }}
+              />
+              <span className="cd-scrubber-time">
+                {(status.time ?? 0).toFixed(1)}s / {(status.duration ?? 0).toFixed(1)}s
+              </span>
+            </div>
             <div className="cd-controls">
               <div className="cd-transport">
                 <button
                   className="cd-icon"
-                  onClick={() =>
-                    stage.current?.seek(Math.max(0, status.completed - 1))
-                  }
+                  onClick={stepBackward}
                   disabled={!canOperate || status.completed === 0}
                   aria-label="上一步"
                 >
@@ -610,6 +805,7 @@ export default function ExhibitionApp() {
                         : "播放演示"
                   }
                   onClick={() => {
+                    setUndoHint("");
                     if (status.playing) stage.current?.pause();
                     else stage.current?.play();
                   }}
@@ -629,9 +825,7 @@ export default function ExhibitionApp() {
                 </button>
                 <button
                   className="cd-icon"
-                  onClick={() =>
-                    stage.current?.seek(Math.min(total, status.completed + 1))
-                  }
+                  onClick={stepForward}
                   disabled={!canOperate || status.completed === total}
                   aria-label="下一步"
                 >
@@ -656,19 +850,57 @@ export default function ExhibitionApp() {
                   </select>
                 </label>
                 <button
-                  className={`cd-loop ${loopGroup !== null ? "is-on" : ""}`}
-                  disabled={!canOperate || (personal&&total===0)}
-                  aria-pressed={loopGroup !== null}
-                  aria-label={
-                    loopGroup !== null ? "取消动作组循环" : "循环当前动作组"
-                  }
+                  type="button"
+                  className={`cd-loop cd-follow-toggle ${followMode !== "off" ? "is-on" : ""}`}
+                  disabled={!canOperate || (personal && total === 0)}
+                  aria-pressed={followMode !== "off"}
+                  aria-label="跟做自动停稳模式"
                   onClick={() =>
-                    setLoopGroup(loopGroup === null ? currentGroup : null)
+                    setFollowMode((cur) =>
+                      cur === "off" ? "step" : cur === "step" ? "group" : "off",
+                    )
                   }
+                >
+                  <span>
+                    {followMode === "off"
+                      ? "跟做:连续"
+                      : followMode === "step"
+                        ? "跟做:单步停"
+                        : "跟做:按组停"}
+                  </span>
+                </button>
+                <button
+                  className={`cd-loop ${loopGroup !== null || loopMode !== "off" ? "is-on" : ""}`}
+                  disabled={!canOperate || (personal&&total===0)}
+                  aria-pressed={loopGroup !== null || loopMode !== "off"}
+                  aria-label={
+                    loopGroup !== null || loopMode !== "off" ? "切换或取消循环模式" : "循环当前动作组"
+                  }
+                  onClick={() => {
+                    if (loopGroup === null && loopMode === "off") {
+                      setLoopGroup(currentGroup);
+                      setLoopMode("group");
+                    } else if (loopMode === "group") {
+                      setLoopGroup(null);
+                      setLoopMode("step");
+                    } else if (loopMode === "step") {
+                      setLoopGroup(null);
+                      setLoopMode("all");
+                    } else {
+                      setLoopGroup(null);
+                      setLoopMode("off");
+                    }
+                  }}
                 >
                   <Repeat2 size={18} />
                   <span>
-                    {loopGroup === null ? "循环组" : `第 ${loopGroup + 1} 组`}
+                    {loopGroup !== null
+                      ? `第 ${loopGroup + 1} 组`
+                      : loopMode === "step"
+                        ? "单步循环"
+                        : loopMode === "all"
+                          ? "整式循环"
+                          : "循环组"}
                   </span>
                 </button>
               </div>

@@ -5,7 +5,9 @@ import { contactTarget, type FingerContact } from '../scene/finger-contact';
 import { fingerJoints, forwardFinger } from '../scene/finger-rig';
 import type { FingerProgram, FingerSegment } from '../scene/finger-program';
 import { smooth, type MotionFrame, type Side } from '../scene/motion';
-import raw from '../../art/wuji-teaching/upper-ring-calibration.json';
+import rawCompact from '../../art/wuji-teaching/compact/upper-ring-calibration.json';
+import { unpackFlickCalibration } from './flick-calibration-codec';
+const raw = unpackFlickCalibration<typeof rawCompact.summary>(rawCompact);
 
 export const UPPER_RING_METADATA = {
   id: 'right-ring-U-c2', move: "U", hand: raw.side, finger: 4,

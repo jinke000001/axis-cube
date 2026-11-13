@@ -104,11 +104,28 @@ export function isCompleteFace(colors: string, face: Face): boolean {
     colors.slice(FACES.indexOf(face) * 9, FACES.indexOf(face) * 9 + 9),
   );
 }
-export function captureValidation(colors: string) {
+export function captureValidation(
+  colors: string,
+  state?: Pick<CaptureState, "evidence" | "uncertain">,
+) {
   try {
     const normalized = normalizeColors(colors);
+    const result = validateFacelets(normalized.facelets, normalized.palette);
+    if (!result.valid && result.indices.length > 1 && state) {
+      const uncertainSet = new Set(state.uncertain);
+      const cellPenalty = (idx: number) => {
+        const face = FACES[Math.floor(idx / 9)];
+        const cell = state.evidence[face]?.[idx % 9];
+        const base = uncertainSet.has(idx) ? 10 : 0;
+        if (!cell) return base;
+        return base + cell.glare * 3 + (1 - cell.coverage) * 2 + cell.spread / 40;
+      };
+      result.indices = [...result.indices].sort(
+        (a, b) => cellPenalty(b) - cellPenalty(a),
+      );
+    }
     return {
-      ...validateFacelets(normalized.facelets, normalized.palette),
+      ...result,
       normalized,
     };
   } catch (error) {

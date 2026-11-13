@@ -6,7 +6,9 @@ import {fingerJoints,forwardFinger} from '../scene/finger-rig';
 import type {FingerProgram,FingerSegment} from '../scene/finger-program';
 import {smooth,type MotionFrame} from '../scene/motion';
 import {createTipFlickProgram} from './tip-flick';
-import raw from '../../art/wuji-teaching/right-middle-side-calibration.json';
+import rawCompact from '../../art/wuji-teaching/compact/right-middle-side-calibration.json';
+import { unpackFlickCalibration } from './flick-calibration-codec';
+const raw = unpackFlickCalibration<typeof rawCompact.summary>(rawCompact);
 
 interface ContactData{side:'left'|'right';finger:1|2|3|4|5;role:'support'|'drive';point:number[];normal:number[];padOffset:number[];}
 interface FrameData{progress:number;angle:number;left:PoseData;right:PoseData;active:ContactData;}

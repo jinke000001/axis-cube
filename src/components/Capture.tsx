@@ -921,7 +921,10 @@ export function Capture({
         }).join("、")
       : "";
   const hasHighlightedCells =
-    validation.indices.length > 0 || capture.uncertain.length > 0;
+    (validation.indices.length > 0 &&
+      !validation.message.includes("方向不合法") &&
+      !validation.message.includes("无法通过正常转动还原")) ||
+    capture.uncertain.length > 0;
   const checkAction = hasHighlightedCells ? "检查高亮格子" : "检查颜色和面顺序";
   const actionReason = processing
     ? progress || "正在处理照片，请稍候。"

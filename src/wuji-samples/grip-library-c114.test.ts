@@ -16,7 +16,7 @@ import { fingerJoints, type FingerIndex } from "../scene/finger-rig";
 import diagrams from "../../evidence/museum-upgrade-2026-11-01/formulas/source-diagram-fixtures.json";
 import arrows from "../../evidence/museum-upgrade-2026-11-01/formulas/pll-arrow-fixtures.json";
 import{createGripLibraryC114}from'./grip-library-c114';
-import inventory from'../wuji-exhibition-u7-r1/accepted-demonstrations.json';
+import inventory from'../wuji-exhibition-u8-r1/accepted-demonstrations.json';
 const NEW_IDS=inventory.entries.map(r=>r.id);
 const sides = ["left", "right"] as const,
   base = applyAlgorithm(SOLVED, "x2");

@@ -9,8 +9,9 @@ type Family='standard'|'front'|'back'|'ring'|'bottom-support'|'left-wrist'|'righ
 type Guide={pad:Vector3;normal:Vector3;finger:number;family:Family};
 const same=(a:HandPose,b:HandPose)=>a.position.distanceTo(b.position)<1e-8&&a.quaternion.clone().normalize().angleTo(b.quaternion.clone().normalize())<1e-7&&Object.entries(a.joints!).every(([k,v])=>Math.abs(v-b.joints![k])<1e-8);
 // Reuse only exact accepted endpoints/poses of the context-aware C110 R/U bridge.
-const context=createDoubleStrokeProgram('gan-f2l-40').segments.filter(s=>s.stage==='TRANSFER'&&s.active==='right');
-function contextual(parts:HandoffPart[],side:Side){return parts.map(part=>{if(side!=='right')return part;const old=context.find(s=>same(s.sample(0).right,part.sample(0))&&same(s.sample(1).right,part.sample(1)));return old?{duration:old.duration,phase:'C110已验连接 · '+old.phase,sample:(p:number)=>old.sample(p).right}:part;});}
+let _context:FingerSegment[]|undefined;
+const getContext=()=>_context??(_context=createDoubleStrokeProgram('gan-f2l-40').segments.filter(s=>s.stage==='TRANSFER'&&s.active==='right'));
+function contextual(parts:HandoffPart[],side:Side){const context=getContext();return parts.map(part=>{if(side!=='right')return part;const old=context.find(s=>same(s.sample(0).right,part.sample(0))&&same(s.sample(1).right,part.sample(1)));return old?{duration:old.duration,phase:'C110已验连接 · '+old.phase,sample:(p:number)=>old.sample(p).right}:part;});}
 const nativeCache=new Map<string,FingerProgram>(),bridgeCache=new Map<string,HandoffPart[]>(),sampleCache=new Map<string,FingerSegment['sample']>();
 function nativeUncached(move:Move,before?:number):FingerProgram{
  if(move.kind||!SOLVE_OUTER_NOTATIONS.includes(move.notation as typeof SOLVE_OUTER_NOTATIONS[number]))throw Error('尚未验证的复原动作：'+move.notation);

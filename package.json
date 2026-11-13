@@ -24,7 +24,10 @@
     "mobile:branding": "node src/platform/generate-branding.mjs",
     "mobile:signing:create": "node src/platform/signing.mjs",
     "mobile:freeze": "node src/platform/mobile-candidate.mjs freeze",
-    "mobile:android:release": "node src/platform/release-android.mjs"
+    "mobile:android:release": "node src/platform/release-android.mjs",
+    "samples": "vite --config samples.vite.config.ts",
+    "samples:build": "vite build --config samples.vite.config.ts && node scripts/package-wuji-samples.mjs",
+    "samples:preview": "vite preview --config samples.vite.config.ts --host 127.0.0.1 --port 3526 --strictPort"
   },
   "dependencies": {
     "@capacitor/android": "8.6.0",

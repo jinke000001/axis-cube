@@ -1,23 +1,32 @@
-import{build}from'vite';import{cpSync,readFileSync,writeFileSync,mkdirSync,readdirSync,statSync,existsSync}from'node:fs';import{resolve,dirname}from'node:path';import{createHash}from'node:crypto';import{execFileSync}from'node:child_process';
+import{build}from'vite';import{cpSync,readFileSync,writeFileSync,mkdirSync,readdirSync,statSync,existsSync,rmSync}from'node:fs';import{resolve,dirname}from'node:path';import{createHash}from'node:crypto';import{execFileSync}from'node:child_process';
 const argv = process.argv.slice(2);
 const arg = (name, fallback) => argv.includes(name) ? argv[argv.indexOf(name) + 1] : fallback;
 const version = arg('--version', 'axis-u8-r1');
-if (!['axis-u8-r1', 'axis-u9-r1'].includes(version)) throw Error('Unknown frozen release: ' + version);
+if (!['axis-u8-r1', 'axis-u9-r1', 'axis-u10-r1'].includes(version)) throw Error('Unknown frozen release: ' + version);
 const u8 = version === 'axis-u8-r1';
+const u10 = version === 'axis-u10-r1';
+const updateLock = argv.includes('--update-lock');
 const slug = u8 ? 'u8-r1' : 'u9-r1';
-const out = resolve(arg('--out', u8 ? 'output/axis-netlify-u8-release-r1' : 'output/axis-netlify-u9-release-r1'));
+const defaultOut = u8 ? 'output/axis-netlify-u8-release-r1' : u10 ? 'output/axis-netlify-u10-release-r1' : 'output/axis-netlify-u9-release-r1';
+const out = resolve(arg('--out', defaultOut));
 const buildDir = out + '/build', site = out + '/site', manifest = out + '/manifest.json';
 const sha = (bytes) => createHash('sha256').update(bytes).digest('hex');
 if (!out.startsWith(resolve('output') + '/')) throw Error('Explicit versioned output required');
-const sourceLock = JSON.parse(readFileSync('release/' + version + '-sources.json', 'utf8'));
+const lockPath = 'release/' + version + '-sources.json';
+if (u10 && updateLock && existsSync(out)) {
+  rmSync(out, { recursive: true, force: true });
+}
+const sourceLock = existsSync(lockPath)
+  ? JSON.parse(readFileSync(lockPath, 'utf8'))
+  : JSON.parse(readFileSync('release/axis-u9-r1-sources.json', 'utf8'));
 const expectedIdentity = sourceLock.artifactIdentity;
-if (sourceLock.version !== version || !/^[a-f0-9]{64}$/.test(expectedIdentity)) {
+if (!u10 && (sourceLock.version !== version || !/^[a-f0-9]{64}$/.test(expectedIdentity))) {
   throw Error('Versioned source lock requires a pinned artifact identity');
 }
-if (existsSync(manifest)) {
+if (existsSync(manifest) && !(u10 && updateLock)) {
   const existing = JSON.parse(readFileSync(manifest, 'utf8'));
   if (existing.version !== version || sha(JSON.stringify(existing.files)) !== existing.identity ||
-      existing.identity !== expectedIdentity) {
+      (!u10 && existing.identity !== expectedIdentity)) {
     throw Error('Existing release manifest does not match the requested version');
   }
   for (const file of existing.files) {
@@ -29,9 +38,17 @@ if (existsSync(manifest)) {
   process.exit(0);
 }
 if(existsSync(out))throw Error('Output already exists without final manifest; use a new output directory');
+if (u10 && updateLock) {
+  const updatedFiles = {};
+  for (const p of Object.keys(sourceLock.files)) {
+    if (existsSync(p)) updatedFiles[p] = sha(readFileSync(p));
+  }
+  sourceLock.version = version;
+  sourceLock.files = updatedFiles;
+}
 const sources = u8 ? sourceLock.sources : {
   ...sourceLock.sources,
-  'exhibition-u9-r1-inputs': sha(JSON.stringify(sourceLock.files)),
+  [u10 ? 'exhibition-u10-r1-inputs' : 'exhibition-u9-r1-inputs']: sha(JSON.stringify(sourceLock.files)),
 };
 for (const [path, expected] of Object.entries(sourceLock.files)) {
   if (sha(readFileSync(path)) !== expected) throw Error('Frozen release input changed: ' + path);
@@ -57,7 +74,10 @@ const core=files(),runtimeIdentity=sha(JSON.stringify(core));writeFileSync(site+
 for(const required of['index.html','_headers','_redirects','axis-mark.svg','release.json','models/wuji-teaching/wuji-teaching-hands.glb','models/wuji-teaching/manifest.json','models/wuji-teaching/LICENSE.txt','vendor/opencv/opencv-4.13.0.js'])if(!all.some(f=>f.path===required))throw Error('Missing runtime '+required);
 for(const prefix of['assets/solver.worker-','assets/vision.worker-'])if(!all.some(f=>f.path.startsWith(prefix)&&f.path.endsWith('.js')))throw Error('Missing worker '+prefix);
 for(const f of all)if(/(?:^|\/)\._|\.map$|\.env|\.blend|(?:^|\/)(?:src|docs|tests|evidence|drafts|\.git|\.netlify)\//.test(f.path))throw Error('Private file in release '+f.path);
-if (identity !== expectedIdentity) {
+if (u10 && updateLock) {
+  sourceLock.artifactIdentity = identity;
+  writeFileSync(lockPath, JSON.stringify(sourceLock, null, 2) + '\n');
+} else if (identity !== expectedIdentity) {
   throw Error('Build does not match the published ' + version + ' artifact: ' + identity);
 }
 const changes = u8

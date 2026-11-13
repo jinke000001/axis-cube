@@ -4,9 +4,10 @@ import{clonePose,blendFingerPose}from'../scene/finger-data';
 import{smooth}from'../scene/motion';
 import type{FingerProgram,FingerSegment}from'../scene/finger-program';
 const CENTER=new Vector3(0,.34,0);
-const reference=baseline('gan-f2l-40').segments;
+let _reference:FingerSegment[]|undefined;
+const getReference=()=>_reference??(_reference=baseline('gan-f2l-40').segments);
 const sameHand=(a:ReturnType<FingerSegment['sample']>['right'],b:ReturnType<FingerSegment['sample']>['right'])=>a.position.distanceTo(b.position)<1e-8&&a.quaternion.clone().normalize().angleTo(b.quaternion.clone().normalize())<1e-7&&Object.entries(a.joints!).every(([k,v])=>Math.abs(v-b.joints![k])<1e-8);
-const canonical=(s:FingerSegment,which:4|9)=>sameHand(s.sample(0).right,reference[which].sample(0).right)&&sameHand(s.sample(1).right,reference[which].sample(1).right);
+const canonical=(s:FingerSegment,which:4|9)=>{const ref=getReference();return sameHand(s.sample(0).right,ref[which].sample(0).right)&&sameHand(s.sample(1).right,ref[which].sample(1).right);};
 export const C109_OPTIONS={
  'ru-35':{ru:.015,m:0,d:0,back:false},
  'm-40':{ru:0,m:.04,d:0,back:false},

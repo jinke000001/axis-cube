@@ -1,5 +1,6 @@
 node_modules/
 dist/
+sample-dist/
 .DS_Store
 ._*
 *.tsbuildinfo

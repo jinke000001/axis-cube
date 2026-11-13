@@ -5,7 +5,9 @@ import {contactTarget,type FingerContact} from '../scene/finger-contact';
 import {fingerJoints,forwardFinger} from '../scene/finger-rig';
 import type {FingerProgram,FingerSegment} from '../scene/finger-program';
 import {smooth,type MotionFrame} from '../scene/motion';
-import raw from '../../art/wuji-teaching/thumb-side-flick-calibration.json';
+import rawCompact from '../../art/wuji-teaching/compact/thumb-side-flick-calibration.json';
+import { unpackFlickCalibration } from './flick-calibration-codec';
+const raw = unpackFlickCalibration<typeof rawCompact.summary>(rawCompact);
 
 export const THUMB_SIDE_FLICK_METADATA={id:'c8-red-right-thumb-U-prime',sourceAlgorithm:'F2L21',sourceStepIndex:1,
  hand:'right',finger:1,originalInstruction:'原表红字：右拇指U′，与随后蓝字左食指U′分别执行。',

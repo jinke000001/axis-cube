@@ -5,7 +5,9 @@ import {contactTarget,type FingerContact} from '../scene/finger-contact';
 import {fingerJoints,forwardFinger} from '../scene/finger-rig';
 import type {FingerProgram,FingerSegment} from '../scene/finger-program';
 import {smooth,type MotionFrame} from '../scene/motion';
-import raw from '../../art/wuji-teaching/thumb-forward-calibration.json';
+import rawCompact from '../../art/wuji-teaching/compact/thumb-forward-calibration.json';
+import { unpackFlickCalibration } from './flick-calibration-codec';
+const raw = unpackFlickCalibration<typeof rawCompact.summary>(rawCompact);
 import idle from '../../art/wuji-teaching/thumb-forward-v3-idle.json';
 const withIdle=(p:ReturnType<typeof handPose>):ReturnType<typeof handPose>=>({...p,joints:{...p.joints,...idle.joints}});
 

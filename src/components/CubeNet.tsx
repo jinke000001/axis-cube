@@ -7,6 +7,22 @@ import {
   DEFAULT_PALETTE,
 } from "../core/cube";
 const EDIT_ORDER: Face[] = ["F", "R", "B", "L", "U", "D"];
+const TOP_NEIGHBOR: Record<Face, Face> = {
+  F: "U",
+  R: "U",
+  B: "U",
+  L: "U",
+  U: "B",
+  D: "F",
+};
+const RIGHT_NEIGHBOR: Record<Face, Face> = {
+  F: "R",
+  R: "B",
+  B: "L",
+  L: "F",
+  U: "R",
+  D: "R",
+};
 export function CubeNet({
   state,
   palette = DEFAULT_PALETTE,
@@ -33,7 +49,17 @@ export function CubeNet({
           }
         >
           <span className="net-label">
-            {onSticker ? FACE_NAMES[face] + "面" : face}
+            {onSticker ? (
+              <>
+                <b>{FACE_NAMES[face]}面</b>
+                <small className="net-neighbors">
+                  ↑{FACE_NAMES[TOP_NEIGHBOR[face]]} · →
+                  {FACE_NAMES[RIGHT_NEIGHBOR[face]]}
+                </small>
+              </>
+            ) : (
+              face
+            )}
           </span>
           <div className="net-grid">
             {Array.from({ length: 9 }, (_, i) => {

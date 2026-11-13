@@ -5,7 +5,9 @@ import { contactTarget, type FingerContact } from '../scene/finger-contact';
 import { fingerJoints, forwardFinger } from '../scene/finger-rig';
 import type { FingerProgram, FingerSegment } from '../scene/finger-program';
 import { smooth, type MotionFrame } from '../scene/motion';
-import raw from '../../art/wuji-teaching/left-side-flick-calibration.json';
+import rawCompact from '../../art/wuji-teaching/compact/left-side-flick-calibration.json';
+import { unpackFlickCalibration } from './flick-calibration-codec';
+const raw = unpackFlickCalibration<typeof rawCompact.summary>(rawCompact);
 
 export const LEFT_SIDE_FLICK_METADATA = {
   id: 'left-index-side-U-prime-c1', move: "U'", hand: 'left', finger: 2,
